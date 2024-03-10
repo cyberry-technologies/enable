@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:      
+  enable-execution-database:
+    image: mysql:8.0.32
+    container_name: enable-execution-database
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "processdb"
+      MYSQL_ROOT_PASSWORD: "secret"
+    ports: #ports forwarded for local development use only
+      - "3306:3306"
+    volumes:
+      - db_data_execution:/var/lib/mysql
+
+  enable-execution-service:
+    build:
+      context: ./enable-execution-service
+      dockerfile: ./docker/Dockerfile
+    container_name: enable-execution-service
+    restart: unless-stopped
+    ports: #ports forwarded for local development use only
+      - "8080:8080"
+    depends_on:
+      - enable-execution-database  
+    environment:
+      spring.profiles.active: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://enable-execution-database:3306/processdb?useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: "secret"
+
+  enable-design-frontend:
+    build:
+      context: ./enable-design-frontend
+      dockerfile: ./docker/Dockerfile
+    container_name: enable-design-frontend
+    ports:
+      - "80:8080"
+    environment:
+      ENABLE_API_GATEWAY_BASEURL: "http://enable-execution-service:8080"
+
+volumes:
+  db_data_execution:
