@@ -28,14 +28,8 @@ public class Task {
     @Column(name = "parent_task_id", nullable = true)
     private Long parentTaskId;
 
-    @Column(name = "name", nullable = false)
-    private String name;
-
-    @Column(name = "description", nullable = true, columnDefinition = "TEXT")
-    private String description;
-
     @Column(name = "status", nullable = true)
-    private int status; // 0=running, 1=completed, 2=interrupted, 3=terminated
+    private Integer status; // 0=running, 1=completed, 2=interrupted, 3=skipped, 4=terminated
 
     @Column(name = "concluded_user_id", nullable = true)
     private Long concludedByUserId;

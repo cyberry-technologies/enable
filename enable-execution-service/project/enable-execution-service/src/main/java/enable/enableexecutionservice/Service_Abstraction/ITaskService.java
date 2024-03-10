@@ -5,13 +5,11 @@ import enable.enableexecutionservice.Dto.TaskDto;
 import java.util.List;
 
 public interface ITaskService {
-    List<TaskDto> getRunningTasks(Long executionId);
+    List<TaskDto> getRunningTasksOfExecution(Long executionId);
 
-    List<TaskDto> getTasks (Long executionId);
+    List<TaskDto> getTasksOfExecution(Long executionId);
 
     TaskDto getTask(Long id);
-
-    TaskDto includeProcess(TaskDto taskDto);
 
     TaskDto completeTask(Long id, Long userId);
 

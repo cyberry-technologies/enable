@@ -1,15 +1,12 @@
 package enable.enableexecutionservice.Service;
 
 import enable.enableexecutionservice.Dto.ExecutionDto;
-import enable.enableexecutionservice.Dto.ProcessDto;
 import enable.enableexecutionservice.Dto.ProcessFileDto;
 import enable.enableexecutionservice.Dto.TaskDto;
 import enable.enableexecutionservice.Model.Execution;
-import enable.enableexecutionservice.Model.ProcessFileInstance;
 import enable.enableexecutionservice.Model.Task;
 import enable.enableexecutionservice.Repository_Abstraction.ExecutionRepository;
 import enable.enableexecutionservice.Repository_Abstraction.TaskRepository;
-import enable.enableexecutionservice.Repository_Abstraction.ProcessFileRepository;
 import enable.enableexecutionservice.Service_Abstraction.IExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,11 +30,10 @@ public class ExecutionService implements IExecutionService {
     @Override
     public List<ExecutionDto> getExecutionsByUserId(Long userId) {
         List<ExecutionDto> result = new ArrayList<>();
+
+        //TODO: implement user functionality
         for (Execution execution: executionRepository.findAll()) {
-            ExecutionDto executionDto = new ExecutionDto(execution);
-            executionDto.setMainTask(new TaskDto(
-                    taskRepository.findById(executionDto.getMainTaskId())
-                        .orElseThrow(() -> new IllegalStateException("Main task not found for execution"))));
+            ExecutionDto executionDto = this.includeMainTask(new ExecutionDto(execution));
             result.add(executionDto);
         }
 
@@ -49,18 +45,8 @@ public class ExecutionService implements IExecutionService {
         ExecutionDto result = new ExecutionDto(executionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Execution not found with ID: " + id)));
 
-        return result;
+        return includeMainTask(result);
     }
-
-    @Override
-    public ExecutionDto includeMainTask(ExecutionDto executionDto) {
-        executionDto.setMainTask(new TaskDto(
-                taskRepository.findById(executionDto.getMainTaskId())
-                        .orElseThrow(() -> new IllegalArgumentException("Main task not found for execution with ID: " + executionDto.getId()))));
-
-        return executionDto;
-    }
-
 
     @Override
     public ExecutionDto createExecutionFromProcessFile(Long userId, String processFileString) {
@@ -75,15 +61,11 @@ public class ExecutionService implements IExecutionService {
         execution.setMainTaskId(null);
         execution = executionRepository.save(execution);
 
-        // Get main ProcessDto from ProcessFile
-        ProcessDto processDto = processFileHelper.getProcessById(processFileDto.getId(), processFileDto.getMainProcessId());
-
         // Create main Task
         Task mainTask = new Task();
         mainTask.setExecutionId(execution.getId());
+        mainTask.setProcessFileId(processFileDto.getId());
         mainTask.setProcessId(processFileDto.getMainProcessId());
-        mainTask.setName(processDto.getName());
-        mainTask.setDescription(processDto.getName());
         mainTask.setStatus(0);
         mainTask.setConcludedByUserId(null);
         mainTask.setClaimedByUserId(null);
@@ -115,6 +97,14 @@ public class ExecutionService implements IExecutionService {
         processFileHelper.deleteById(processFileId);
 
         return true;
+    }
+
+    private ExecutionDto includeMainTask(ExecutionDto executionDto) {
+        executionDto.setMainTask(new TaskDto(
+                taskRepository.findById(executionDto.getMainTaskId())
+                        .orElseThrow(() -> new IllegalArgumentException("Main task not found for execution with ID: " + executionDto.getId()))));
+
+        return executionDto;
     }
 }
 

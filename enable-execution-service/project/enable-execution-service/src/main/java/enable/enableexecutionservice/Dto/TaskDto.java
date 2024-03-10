@@ -18,9 +18,7 @@ public class TaskDto {
     private Long processFileId;
     private Long processId;
     private Long parentTaskId;
-    private String name;
-    private String description;
-    private int status; // 0=standard, 1=claimed, 2=completed
+    private Integer status; // 0=running, 1=completed, 2=interrupted, 3=skipped, 4=terminated
     private Long concludedByUserId;
     private Long claimedByUserId;
     private Date createdDateTime;
@@ -33,8 +31,6 @@ public class TaskDto {
         processFileId = task.getProcessFileId();
         processId = task.getProcessId();
         parentTaskId = task.getParentTaskId();
-        name = task.getName();
-        description = task.getDescription();
         status = task.getStatus();
         concludedByUserId = task.getConcludedByUserId();
         claimedByUserId = task.getClaimedByUserId();
@@ -48,8 +44,6 @@ public class TaskDto {
                 processId,
                 processFileId,
                 parentTaskId,
-                name,
-                description,
                 status,
                 concludedByUserId,
                 claimedByUserId,

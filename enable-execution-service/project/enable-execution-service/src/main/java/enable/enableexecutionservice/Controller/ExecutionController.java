@@ -12,13 +12,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/execution")
 public class ExecutionController {
-
     private final IExecutionService executionService;
-    private final ITaskService taskService;
 
-    public ExecutionController(IExecutionService executionService, ITaskService taskService) {
+    public ExecutionController(IExecutionService executionService) {
         this.executionService = executionService;
-        this.taskService = taskService;
     }
 
     @GetMapping("/user")
@@ -39,16 +36,8 @@ public class ExecutionController {
     public ResponseEntity<ExecutionDto> executeFromProcessFile(@RequestParam(value = "userId") Long userId, @RequestBody String processFileString) {
         ExecutionDto result = executionService.createExecutionFromProcessFile(userId, processFileString);
 
-        taskService.extractNextTasks(result.getId(), null);
-
         return ResponseEntity.created(URI.create("/execution/" + result.getId()))
                 .body(result);
-    }
-
-    @PutMapping("/terminate")
-    public ResponseEntity<ExecutionDto> terminateExecution(@RequestParam(value = "id") Long id) {
-        ExecutionDto result = executionService.terminateExecution(id);
-        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/delete")

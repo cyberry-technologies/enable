@@ -9,8 +9,6 @@ public interface IExecutionService {
 
     ExecutionDto getExecution(Long id);
 
-    ExecutionDto includeMainTask(ExecutionDto executionDto);
-
     ExecutionDto createExecutionFromProcessFile(Long userId, String processFileString);
 
     Boolean deleteExecution(Long id);

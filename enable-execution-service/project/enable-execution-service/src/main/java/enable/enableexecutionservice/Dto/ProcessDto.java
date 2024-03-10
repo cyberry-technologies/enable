@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class ProcessDto {
     private Long id;
     private Long parentProcessId;
-    private int type;
+    private Integer type;
     private String name;
     private String description;
     private String inputDescription;
