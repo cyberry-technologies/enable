@@ -1,0 +1,1935 @@
+{
+	"info": {
+		"_postman_id": "18032e30-b772-4e57-b536-725be9b9ea79",
+		"name": "EPIC99. Complete task flow test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17538466"
+	},
+	"item": [
+		{
+			"name": "create execution",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Execution and mainTask correctly added\", () => {",
+							"    pm.response.to.have.status(201);",
+							"",
+							"    var responseBody = pm.response.json();",
+							"",
+							"    // Assert if id exists and is not null",
+							"    pm.expect(responseBody).to.have.property('id');",
+							"    pm.expect(responseBody.id).to.not.be.null;",
+							"    ",
+							"    // Assert if processFileId exists and is not null",
+							"    pm.expect(responseBody).to.have.property('processFileId');",
+							"    pm.expect(responseBody.processFileId).to.not.be.null;",
+							"    ",
+							"    // Assert if mainTaskId exists and is not null",
+							"    pm.expect(responseBody).to.have.property('mainTaskId');",
+							"    pm.expect(responseBody.mainTaskId).to.not.be.null;",
+							"",
+							"    // Assert if mainTask exists and id is mainTaskId",
+							"    pm.expect(responseBody).to.have.property('mainTask');",
+							"    pm.expect(responseBody.mainTask.id).to.equal(responseBody.mainTaskId);",
+							"",
+							"    // Assert if mainTask.executionId exists and is saved executionId",
+							"    pm.expect(responseBody.mainTask).to.have.property('executionId');",
+							"    pm.expect(responseBody.mainTask.executionId).to.equal(responseBody.id);",
+							"",
+							"",
+							"    // Set execution id in environment variable",
+							"    pm.environment.set('executionId', responseBody.id);",
+							"    // Set execution id in environment variable",
+							"    pm.environment.set('processFileId', responseBody.processFileId);",
+							"    // Set main task id as mainTaskId in environment variable",
+							"    pm.environment.set('mainTaskId', responseBody.mainTaskId);",
+							"})",
+							"",
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    ",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(201);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '1: Empty',",
+							"        ];",
+							"        var completedNames = [];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fileName\": \"Process - Integration test.json\",\n    \"mainProcessId\": 0,\n    \"openedProcessId\": 16,\n    \"selectedProcessId\": 16,\n    \"processes\": [\n        {\n            \"id\": 0,\n            \"parentProcessId\": null,\n            \"type\": \"0\",\n            \"name\": \"Test\",\n            \"description\": \"##1: Empty## \\nTests the most basic process: one without child processes. It should just be there as the lowest task for a user to complete. Additionally, because it's the first process of the processFile, it should be created when the execution is first created/ run.\\n\\nOn: Creation of Execution\\n-> Running:     Test + 1\\n\\nOn: Completion of <1: Empty>\\n-> Completed:   1\\n-> Running:     2 + 2.1\\n\\n\\n##2: Merge at end##\\nTests the scenario where 2 connections lead into the end of the parent process. The logic should be: if the end is reached by just 1 connection from a complete process. The parent process is done, as in using a 'return' in code, and all 'Running' processes below are either 'Completed' for the one that reached it first and 'Skipped' for the others that did not.\\n\\nOn: Completion of 2.1\\n-> Completed:   2.1\\n-> Running:     2 + 2.2 + 2.3\\n\\nOn: Completion of 2.2\\n-> Completed:   2.1 + 2.2 + 2\\n-> Skipped:     2.3\\n-> Running:     3 + 3.1 + 3.2\\n\\n\\n##3: Split at Start##\\nTests if the correct things happen when a process immediately splits at the start and after when they merge into 1 process again. The logic should be: 1 - When multiple connections come out of a newly completed process, all create a new task with the destination process. 2 - When multiple connections lead into 1 non-parent process, every time an origin process is completed, a new task of the destination is added, even if it already exists or is completed. This behaviour can be captured by using an IF beforehand that uses a boolean to checks if the task is already created. 3 - If one path reaches the end of the parent process, all other paths are skipped.\\n\\nOn: Completion of 3.1\\n-> Completed:   3.1 \\n-> Running:     3 + 3.2 + 3.3\\n\\nOn: Completion of 3.2\\n-> Completed:   3.1 + 3.2\\n-> Running:     3 + 3.3 + 3.3\\n\\nOn: Completion of 3.3\\n-> Completed:   2 + 3.1 + 3.2 + 3.3 + 3\\n-> Skipped:     3.3\\n-> Running:     4 + 4.1\\n\\n\\n##4: Loop and if##\\nThis tests the loop and IF functionality. IF is an external process that interrupts if the condition is not met, and completes if the condition is met. The logic should constantly create and complete 4.1 and 4.2, and 4.3 every time after 4.1 until the IF condition is met and the parent is completed.\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   4.1 + 4.2\\n-> Running:     4.1 + 4.3 + 4.4\\n\\nOn: Completion of 4.3\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Running:     4.1 + 4.4\\n\\nOn: Interruption of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Interrupted: 4.4\\n-> Running:     4.1\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1\\n-> Interrupted: 4.4\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   3 + 4.1 + 4.2 + 4.3 + 4.1 + 4.2\\n-> Interrupted: 4.4\\n-> Running:     4.3 + 4.4\\n\\nOn: Completion of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1 + 4.2 + 4.4 + 4 \\n-> Interrupted: 4.4\\n-> Skipped:     4.3\\n-> Running:     5 + 5.1 + 5.2 + 5.3\\n\\n\\n##5: Conclude child tasks##\\nThis is about testing the child conclusion functions. The logic should be: When the parent is concluded with 'Interrupted', all the running child tasks should be concluded with 'Interrupted'. When the parent is concluded with 'Completed', all the running child tasks should be concluded with 'Skipped'. This should also happen when the completion leads to the completion of a parent task, in this case the \\\"sibling\\\" tasks should be concluded with 'Skipped' as well.\\n\\nOn: Interruption of 5.1\\n-> Interrupted: 5.1 + 5.1.1\\n-> Running:     5.2 + 5.2.1 + 5.3 + 5.3.1\\n\\nOn: Completion of 5.2\\n-> Interrupted: 5.1 + 5.1.1\\n-> Completed:   5.2 + 5.2.1 + 5\\n-> Skipped:     5.3 + 5.3.1\\n-> Running:     6\\n\\n\\n##6: Execution completed##\\nThis is the final test. When the process is finished, the test process should be finished. It should then show that the execution is also finished and not running anymore. It should still be possible to see the specific tasks and their statuses and results.\\n\\nOn: Completion of <6: Execution completed>\\n-> Completed:   6 + Test + whole execution\\n-> Interrupted: No new\\n-> Skipped:     No new\\n-> Terminated:  None\\n-> Running:     None\"\n        },\n        {\n            \"id\": 1,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"1: Empty\",\n            \"x\": 15.87311947263649,\n            \"y\": 37.865055387713994,\n            \"description\": \"##1: Empty## \\nTests the most basic process: one without child processes. It should just be there as the lowest task for a user to complete. Additionally, because it's the first process of the processFile, it should be created when the execution is first created/ run.\\n\\nOn: Creation of Execution\\n-> Running:     Test + 1\\n\\nOn: Completion of <1: Empty>\\n-> Completed:   1\\n-> Running:     Test + 2 + 2.1\"\n        },\n        {\n            \"id\": 2,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"2: Merge at end\",\n            \"x\": 26.733674901282512,\n            \"y\": 61.22860020140987,\n            \"description\": \"##2: Merge at end##\\nTests the scenario where 2 connections lead into the end of the parent process. The logic should be: if the end is reached by just 1 connection from a complete process. The parent process is done, as in using a 'return' in code, and all 'Running' processes below are either 'Completed' for the one that reached it first and 'Skipped' for the others that did not.\\n\\nOn: Completion of 2.1\\n-> Completed:   2.1\\n-> Running:     Test + 2 + 2.2 + 2.3\\n\\nOn: Completion of 2.2\\n-> Completed:   2.1 + 2.2 + 2\\n-> Skipped:     2.3\\n-> Running:     Test + 3 + 3.1 + 3.2\"\n        },\n        {\n            \"id\": 3,\n            \"parentProcessId\": 0,\n            \"type\": \"0\",\n            \"name\": \"3: Split at start\",\n            \"x\": 33.20823679143687,\n            \"y\": 37.46223564954683,\n            \"description\": \"##3: Split at Start##\\nTests if the correct things happen when a process immediately splits at the start and after when they merge into 1 process again. The logic should be: 1 - When multiple connections come out of a newly completed process, all create a new task with the destination process. 2 - When multiple connections lead into 1 non-parent process, every time an origin process is completed, a new task of the destination is added, even if it already exists or is completed. This behaviour can be captured by using an IF beforehand that uses a boolean to checks if the task is already created. 3 - If one path reaches the end of the parent process, all other paths are skipped.\\n\\nOn: Completion of 3.1\\n-> Completed:   3.1 \\n-> Running:     Test + 3 + 3.2 + 3.3\\n\\nOn: Completion of 3.2\\n-> Completed:   3.1 + 3.2\\n-> Running:     Test + 3 + 3.3 + 3.3\\n\\nOn: Completion of 3.3\\n-> Completed:   2 + 3.1 + 3.2 + 3.3 + 3\\n-> Skipped:     3.3\\n-> Running:     4 + 4.1\"\n        },\n        {\n            \"id\": 4,\n            \"parentProcessId\": 2,\n            \"type\": 0,\n            \"name\": \"2.1\",\n            \"x\": 18.57638888888889,\n            \"y\": 49.69249692496925\n        },\n        {\n            \"id\": 5,\n            \"parentProcessId\": 2,\n            \"type\": 0,\n            \"name\": \"2.2\",\n            \"x\": 54.82491923114578,\n            \"y\": 36.4551863041289\n        },\n        {\n            \"id\": 6,\n            \"parentProcessId\": 2,\n            \"type\": 0,\n            \"name\": \"2.3\",\n            \"x\": 52.77777777777778,\n            \"y\": 66.54366543665436\n        },\n        {\n            \"id\": 7,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"4: Loop and If\",\n            \"x\": 37.890625,\n            \"y\": 61.83282980866063,\n            \"description\": \"This tests the loop and IF functionality. IF is an external process that interrupts if the condition is not met, and completes if the condition is met. The logic should constantly create and complete 4.1 and 4.2, and 4.3 every time after 4.1 until the IF condition is met and the parent is completed.\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   4.1 + 4.2\\n-> Running:     4.1 + 4.3 + 4.4\\n\\nOn: Completion of 4.3\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Running:     4.1 + 4.4\\n\\nOn: Interruption of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Interrupted: 4.4\\n-> Running:     4.1\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1\\n-> Interrupted: 4.4\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   3 + 4.1 + 4.2 + 4.3 + 4.1 + 4.2\\n-> Interrupted: 4.4\\n-> Running:     4.3 + 4.4\\n\\nOn: Completion of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1 + 4.2 + 4.4 + 4 \\n-> Interrupted: 4.4\\n-> Skipped:     4.3\\n-> Running:     5 + 5.1 + 5.2 + 5.3\"\n        },\n        {\n            \"id\": 8,\n            \"parentProcessId\": 3,\n            \"type\": 0,\n            \"name\": \"3.1\",\n            \"x\": 28.125,\n            \"y\": 31.61131611316113\n        },\n        {\n            \"id\": 9,\n            \"parentProcessId\": 3,\n            \"type\": 0,\n            \"name\": \"3.2\",\n            \"x\": 27.430555555555557,\n            \"y\": 62.48462484624846\n        },\n        {\n            \"id\": 10,\n            \"parentProcessId\": 3,\n            \"type\": 0,\n            \"name\": \"3.3\",\n            \"x\": 60.06944444444444,\n            \"y\": 50.307503075030745\n        },\n        {\n            \"id\": 11,\n            \"parentProcessId\": 7,\n            \"type\": 0,\n            \"name\": \"4.1\",\n            \"x\": 27.69097222222222,\n            \"y\": 63.59163591635917\n        },\n        {\n            \"id\": 12,\n            \"parentProcessId\": 7,\n            \"type\": 0,\n            \"name\": \"4.2\",\n            \"x\": 30.03472222222222,\n            \"y\": 36.162361623616235\n        },\n        {\n            \"id\": 13,\n            \"parentProcessId\": 7,\n            \"type\": 0,\n            \"name\": \"4.3\",\n            \"x\": 61.28472222222222,\n            \"y\": 64.57564575645756\n        },\n        {\n            \"id\": 14,\n            \"parentProcessId\": 7,\n            \"type\": \"2\",\n            \"name\": \"4.4 IF\",\n            \"x\": 55.729166666666664,\n            \"y\": 37.63837638376384\n        },\n        {\n            \"id\": 15,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"6: Execution completed\",\n            \"x\": 65.16333257187613,\n            \"y\": 27.391742195367573,\n            \"description\": \"##6: Execution completed##\\nThis is the final test. When the process is finished, the test process should be finished. It should then show that the execution is also finished and not running anymore. It should still be possible to see the specific tasks and their statuses and results.\\n\\nOn: Completion of <6: Execution completed>\\n-> Completed:   6 + Test + whole execution\\n-> Interrupted: No new\\n-> Skipped:     No new\\n-> Terminated:  None\\n-> Running:     None\"\n        },\n        {\n            \"id\": 16,\n            \"parentProcessId\": 0,\n            \"type\": \"0\",\n            \"name\": \"5: Conclude child tasks\",\n            \"x\": 60.85069444444444,\n            \"y\": 41.57441574415744,\n            \"description\": \"##5: Conclude child tasks##\\nThis is about testing the child conclusion functions. The logic should be: When the parent is concluded with 'Interrupted', all the running child tasks should be concluded with 'Interrupted'. When the parent is concluded with 'Completed', all the running child tasks should be concluded with 'Skipped'. This should also happen when the completion leads to the completion of a parent task, in this case the \\\"sibling\\\" tasks should be concluded with 'Skipped' as well. \\n\\nOn: Interruption of 5.1\\n-> Interrupted: 5.1 + 5.1.1\\n-> Running:     5.2 + 5.2.1 + 5.3 + 5.3.1\\n\\nOn: Completion of 5.2\\n-> Interrupted: 5.1 + 5.1.1\\n-> Completed:   5.2 + 5.2.1 + 5\\n-> Skipped:     5.3 + 5.3.1\\n-> Running:     6\"\n        },\n        {\n            \"id\": 17,\n            \"parentProcessId\": 16,\n            \"type\": 0,\n            \"name\": \"5.1\",\n            \"x\": 42.53472222222222,\n            \"y\": 29.520295202952028\n        },\n        {\n            \"id\": 18,\n            \"parentProcessId\": 16,\n            \"type\": 0,\n            \"name\": \"5.2\",\n            \"x\": 41.75347222222222,\n            \"y\": 54.36654366543665\n        },\n        {\n            \"id\": 19,\n            \"parentProcessId\": 16,\n            \"type\": 0,\n            \"name\": \"5.3\",\n            \"x\": 38.88888888888889,\n            \"y\": 75.89175891758919\n        },\n        {\n            \"id\": 20,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"Types\",\n            \"x\": 69.23604085761838,\n            \"y\": 69.78851963746223\n        },\n        {\n            \"id\": 21,\n            \"parentProcessId\": 17,\n            \"type\": 0,\n            \"name\": \"5.1.1\",\n            \"x\": 41.05902777777778,\n            \"y\": 49.69249692496925\n        },\n        {\n            \"id\": 22,\n            \"parentProcessId\": 18,\n            \"type\": 0,\n            \"name\": \"5.2.1\",\n            \"x\": 48.09027777777778,\n            \"y\": 48.33948339483395\n        },\n        {\n            \"id\": 23,\n            \"parentProcessId\": 19,\n            \"type\": 0,\n            \"name\": \"5.3.1\",\n            \"x\": 46.26736111111111,\n            \"y\": 45.63345633456334\n        }\n    ],\n    \"connections\": [\n        {\n            \"id\": 0,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 0,\n            \"destinationProcessId\": 1,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 1,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 1,\n            \"destinationProcessId\": 2,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 2,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 2,\n            \"destinationProcessId\": 3,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 4,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 2,\n            \"destinationProcessId\": 4,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 5,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 4,\n            \"destinationProcessId\": 5,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 6,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 4,\n            \"destinationProcessId\": 6,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 7,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 6,\n            \"destinationProcessId\": 2,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 8,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 5,\n            \"destinationProcessId\": 2,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 9,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 3,\n            \"destinationProcessId\": 8,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 10,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 3,\n            \"destinationProcessId\": 9,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 11,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 8,\n            \"destinationProcessId\": 10,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 12,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 9,\n            \"destinationProcessId\": 10,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 13,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 10,\n            \"destinationProcessId\": 3,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 14,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 3,\n            \"destinationProcessId\": 7,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 15,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 11,\n            \"destinationProcessId\": 13,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 16,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 11,\n            \"destinationProcessId\": 12,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 17,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 12,\n            \"destinationProcessId\": 11,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 18,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 7,\n            \"destinationProcessId\": 11,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 19,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 14,\n            \"destinationProcessId\": 7,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 20,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 12,\n            \"destinationProcessId\": 14,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 22,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 17,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 23,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 18,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 24,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 19,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 25,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 17,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 26,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 18,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 27,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 19,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 28,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 7,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 29,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 15,\n            \"destinationProcessId\": 0,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 30,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 15,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 31,\n            \"parentProcessId\": 17,\n            \"originProcessId\": 21,\n            \"destinationProcessId\": 17,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 32,\n            \"parentProcessId\": 17,\n            \"originProcessId\": 17,\n            \"destinationProcessId\": 21,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 33,\n            \"parentProcessId\": 18,\n            \"originProcessId\": 22,\n            \"destinationProcessId\": 18,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 34,\n            \"parentProcessId\": 18,\n            \"originProcessId\": 18,\n            \"destinationProcessId\": 22,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 35,\n            \"parentProcessId\": 19,\n            \"originProcessId\": 23,\n            \"destinationProcessId\": 19,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 36,\n            \"parentProcessId\": 19,\n            \"originProcessId\": 19,\n            \"destinationProcessId\": 23,\n            \"isParentConnection\": true\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/execution/execute/new/processfile?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"execution",
+						"execute",
+						"new",
+						"processfile"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 1: Empty",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '2: Merge at end',",
+							"            '2.1',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_1: Empty}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_1: Empty}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 2.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '2: Merge at end',",
+							"            '2.2',",
+							"            '2.3'",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1'",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_2.1}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_2.1}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 2.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '3: Split at start',",
+							"            '3.1',",
+							"            '3.2'",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end'",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [",
+							"            '2.3'",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_2.2}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_2.2}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 3.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '3: Split at start',",
+							"            '3.2',",
+							"            '3.3'",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [",
+							"            '2.3'",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_3.1}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_3.1}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 3.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '3: Split at start',",
+							"            '3.3',",
+							"            '3.3'",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [",
+							"            '2.3'",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_3.2}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_3.2}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 3.3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '4: Loop and If',",
+							"            '4.1',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_3.3}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_3.3}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '4: Loop and If',",
+							"            '4.2',",
+							"            '4.3',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_4.1}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_4.1}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '4: Loop and If',",
+							"            '4.3',",
+							"            '4.1',",
+							"            '4.4 IF',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_4.2}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_4.2}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"        ",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '4: Loop and If',",
+							"            '4.1',",
+							"            '4.4 IF',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.3',",
+							"        ];",
+							"        var interruptedNames = [];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_4.3}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_4.3}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "interrupt - 4.4 IF",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '4: Loop and If',",
+							"            '4.1',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.3',",
+							"        ];",
+							"        var interruptedNames = [",
+							"            '4.4 IF',",
+							"        ];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/interrupt?id={{taskId_4.4 IF}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"interrupt"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_4.4 IF}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.1 take2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '4: Loop and If',",
+							"            '4.2',",
+							"            '4.3',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.3',",
+							"            '4.1',",
+							"        ];",
+							"        var interruptedNames = [",
+							"            '4.4 IF',",
+							"        ];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_4.1}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_4.1}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.2 take2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '4: Loop and If',",
+							"            '4.3',",
+							"            '4.1',",
+							"            '4.4 IF',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.3',",
+							"            '4.1',",
+							"            '4.2',",
+							"        ];",
+							"        var interruptedNames = [",
+							"            '4.4 IF',",
+							"        ];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_4.2}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_4.2}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.4 IF",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '5: Conclude child tasks',",
+							"            '5.1',",
+							"            '5.1.1',",
+							"            '5.2',",
+							"            '5.2.1',",
+							"            '5.3',",
+							"            '5.3.1',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.3',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.4 IF',",
+							"            '4: Loop and If',",
+							"        ];",
+							"        var interruptedNames = [",
+							"            '4.4 IF',",
+							"        ];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"            '4.1',",
+							"            '4.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_4.4 IF}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_4.4 IF}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "interrupt - 5.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '5: Conclude child tasks',",
+							"            '5.2',",
+							"            '5.2.1',",
+							"            '5.3',",
+							"            '5.3.1',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.3',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.4 IF',",
+							"            '4: Loop and If',",
+							"        ];",
+							"        var interruptedNames = [",
+							"            '4.4 IF',",
+							"            '5.1',",
+							"            '5.1.1',",
+							"        ];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"            '4.1',",
+							"            '4.3',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/interrupt?id={{taskId_5.1}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"interrupt"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_5.1}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 5.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, status, names) {",
+							"    console.log('checking status: ' + status);",
+							"    var tasksWithStatus = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.status == status) {",
+							"            tasksWithStatus.push(task);",
+							"        }",
+							"    });",
+							"",
+							"    // Assert same size",
+							"    pm.expect(names).to.be.an('array').that.has.lengthOf(tasksWithStatus.length);",
+							"",
+							"    tasksWithStatus.forEach((task, index) => {",
+							"        // Assert if 'names' array contains task process name",
+							"        pm.expect(names.includes(task.process.name)).to.be.true;",
+							"",
+							"        if(status == 0) {",
+							"            // Save id for future use",
+							"            pm.collectionVariables.set('taskId_' + task.process.name, task.id);",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Tasks correct\", () => {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    pm.sendRequest({",
+							"        url: pm.environment.get('apiGatewayBaseUrl') ",
+							"            + '/api/task/execution?executionId='",
+							"            + pm.environment.get('executionId'),",
+							"        method: 'GET',",
+							"    }, function (err, response) {",
+							"        if (err) {",
+							"            console.error(err);",
+							"            return;",
+							"        }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log(tasks);",
+							"",
+							"        var runningNames = [",
+							"            'Test',",
+							"            '6: Execution completed',",
+							"        ];",
+							"        var completedNames = [",
+							"            '1: Empty',",
+							"            '2.1',",
+							"            '2.2',",
+							"            '2: Merge at end',",
+							"            '3.1',",
+							"            '3.2',",
+							"            '3.3',",
+							"            '3: Split at start',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.3',",
+							"            '4.1',",
+							"            '4.2',",
+							"            '4.4 IF',",
+							"            '4: Loop and If',",
+							"            '5.2',",
+							"            '5: Conclude child tasks',",
+							"        ];",
+							"        var interruptedNames = [",
+							"            '4.4 IF',",
+							"            '5.1',",
+							"            '5.1.1',",
+							"        ];",
+							"        var skippedNames = [",
+							"            '2.3',",
+							"            '3.3',",
+							"            '4.1',",
+							"            '4.3',",
+							"            '5.2.1',",
+							"            '5.3',",
+							"            '5.3.1',",
+							"        ];",
+							"        var terminatedNames = [];",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, runningNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"    });",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/api/task/complete?id={{taskId_5.2}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"api",
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{taskId_5.2}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "taskId_Test",
+			"value": ""
+		},
+		{
+			"key": "taskId_1: Empty",
+			"value": ""
+		},
+		{
+			"key": "taskId_2: Merge at end",
+			"value": ""
+		},
+		{
+			"key": "taskId_2.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_2.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_2.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_3: Split at start",
+			"value": ""
+		},
+		{
+			"key": "taskId_3.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_3.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_3.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_4: Loop and If",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.4 IF",
+			"value": ""
+		},
+		{
+			"key": "taskId_5: Conclude child tasks",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.1.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.2.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.3.1",
+			"value": ""
+		}
+	]
+}
