@@ -14,9 +14,6 @@ public class ProcessFileInstance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "file_name", nullable = false)
-    private String fileName;
-
     @Column(name = "json_string", nullable = false, columnDefinition = "TEXT")
     private String jsonString;
 }

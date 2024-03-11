@@ -18,14 +18,14 @@ public class TaskController {
     }
 
     @GetMapping("/execution/running")
-    public ResponseEntity<List<TaskDto>> getRunningTasks(@RequestParam(value = "executionId") Long executionId) {
+    public ResponseEntity<List<TaskDto>> getRunningTasksOfExecution(@RequestParam(value = "executionId") Long executionId) {
         List<TaskDto> result = taskService.getRunningTasksOfExecution(executionId);
 
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/execution")
-    public ResponseEntity<List<TaskDto>> getAllTasks(@RequestParam(value = "executionId") Long executionId) {
+    public ResponseEntity<List<TaskDto>> getTasksOfExecution(@RequestParam(value = "executionId") Long executionId) {
         List<TaskDto> result = taskService.getTasksOfExecution(executionId);
 
         return ResponseEntity.ok(result);

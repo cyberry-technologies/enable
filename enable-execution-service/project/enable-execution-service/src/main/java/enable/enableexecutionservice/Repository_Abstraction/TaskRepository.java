@@ -17,10 +17,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Transactional
     @Query("DELETE FROM Task t WHERE t.executionId = :executionId")
     void deleteByExecutionId(@Param("executionId") Long executionId);
-
-    List<Task> findByExecutionId(Long executionId);
-
-    List<Task> findByParentTaskId(Long parentTaskId);
 }
 
 

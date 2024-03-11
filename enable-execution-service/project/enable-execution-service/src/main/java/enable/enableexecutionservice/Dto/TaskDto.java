@@ -41,8 +41,8 @@ public class TaskDto {
     public Task toTask() {
         return new Task(id,
                 executionId,
-                processId,
                 processFileId,
+                processId,
                 parentTaskId,
                 status,
                 concludedByUserId,
