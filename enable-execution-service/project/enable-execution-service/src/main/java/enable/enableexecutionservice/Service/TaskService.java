@@ -6,14 +6,18 @@ import enable.enableexecutionservice.Dto.TaskDto;
 import enable.enableexecutionservice.Model.Task;
 import enable.enableexecutionservice.Repository_Abstraction.TaskRepository;
 import enable.enableexecutionservice.Service_Abstraction.ITaskService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 @Service
 public class TaskService implements ITaskService {
+
     private final TaskRepository taskRepository;
     private final ProcessFileHelper processFileHelper;
     private final ExecutionEngineServiceHelper executionEngineServiceHelper;
@@ -67,9 +71,6 @@ public class TaskService implements ITaskService {
         if (requestBody.getParentTaskId() != null) {
             stream = stream.filter(task -> (Objects.equals(task.getParentTaskId(), requestBody.getParentTaskId())));
         }
-        if (requestBody.getCreatorId() != null) {
-            stream = stream.filter(task -> (Objects.equals(task.getParentTaskId(), requestBody.getCreatorId())));
-        }
         if (requestBody.getClaimedByUserId() != null) {
             stream = stream.filter(task -> (Objects.equals(task.getParentTaskId(), requestBody.getClaimedByUserId())));
         }
@@ -77,21 +78,46 @@ public class TaskService implements ITaskService {
         List<TaskDto> list = stream.map(TaskDto::new).toList();
 
         if (list.size() > 0) {
-            if (requestBody.getProcessType() != null) {
-                list.removeIf(task -> !Objects.equals(processFileHelper.includeProcessForTask(task).getProcess().getType(), requestBody.getProcessType()));
-            }
-            if (requestBody.getFormatWithProcesses()) {
+            if (requestBody.getProcessType() != null || (requestBody.getFormatWithProcesses() != null && requestBody.getFormatWithProcesses())) {
                 list = processFileHelper.includeProcessForTaskList(list);
+
+                if (requestBody.getProcessType() != null) {
+                    list.removeIf(task -> !Objects.equals(task.getProcess().getType(), requestBody.getProcessType()));
+                }
             }
-            if (requestBody.getFormatWithParticipants()) {
+            if (requestBody.getFormatWithParticipants() != null && requestBody.getFormatWithParticipants()) {
                 throw new IllegalArgumentException();
             }
-            if (requestBody.getFormatAsTaskTree()) {
-                throw new IllegalArgumentException();
+            if (requestBody.getFormatAsTaskTree() != null && requestBody.getFormatAsTaskTree()) {
+                list = this.buildTaskTree(list);
+            }
+        }
+        return list;
+    }
+
+    private List<TaskDto> buildTaskTree(List<TaskDto> tasks) {
+        List<TaskDto> topLayerTasks = new ArrayList<>();
+
+        for (TaskDto task : tasks) {
+            if (findTaskById(task.getParentTaskId(), tasks) == null) {
+                topLayerTasks.add(task);
             }
         }
 
-        return list;
+        for (TaskDto task : topLayerTasks) {
+            task.includeAllSubtasksFromTaskList(tasks);
+        }
+
+        return topLayerTasks;
+    }
+
+    private TaskDto findTaskById(Long id, List<TaskDto> tasks) {
+        for (TaskDto task : tasks) {
+            if (Objects.equals(task.getId(), id)) {
+                return task;
+            }
+        }
+        return null;
     }
 
     @Override

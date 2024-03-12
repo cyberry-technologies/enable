@@ -6,7 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,6 +27,7 @@ public class TaskDto {
     private Date createdDateTime;
 
     private ProcessDto process;
+    private List<TaskDto> subTasks;
 
     public TaskDto(Task task) {
         id = task.getId();
@@ -48,5 +52,16 @@ public class TaskDto {
                 concludedByUserId,
                 claimedByUserId,
                 createdDateTime);
+    }
+
+    public void includeAllSubtasksFromTaskList(List<TaskDto> list) {
+        this.subTasks = new ArrayList<>();
+
+        for (TaskDto task : list) {
+            if (Objects.equals(task.getParentTaskId(), id)) {
+                task.includeAllSubtasksFromTaskList(list);
+                this.subTasks.add(task);
+            }
+        }
     }
 }

@@ -62,8 +62,20 @@ public class ProcessFileHelper {
         filter.setId(taskDto.getProcessId());
         List<ProcessDto> foundProcesses = dtoFilterHelper.filterProcesses(processFileDto.getProcesses(), filter);
 
-        taskDto.setProcess(foundProcesses.get(0));
-        return taskDto;
+        TaskDto result = new TaskDto(
+                taskDto.getId(),
+                taskDto.getExecutionId(),
+                taskDto.getProcessFileId(),
+                taskDto.getProcessId(),
+                taskDto.getParentTaskId(),
+                taskDto.getStatus(),
+                taskDto.getConcludedByUserId(),
+                taskDto.getClaimedByUserId(),
+                taskDto.getCreatedDateTime(),
+                foundProcesses.get(0),
+                null);
+
+        return result;
     }
 
     public List<TaskDto> includeProcessForTaskList(List<TaskDto> list) {
