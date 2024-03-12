@@ -25,10 +25,10 @@ public class SecurityConfig {
                 "http://localhost:80",
                 "http://localhost:8080",
                 "http://localhost:8081",
-                "http://cyberry-enable-api-gateway:8080",
-                "http://cyberry-enable-api-gateway:8081",
-                "http://cyberry-enable-design-frontend:8080",
-                "http://cyberry-enable-design-frontend:8081"));
+                "http://enable-api-gateway:8080",
+                "http://enable-api-gateway:8081",
+                "http://enable-design-frontend:8080",
+                "http://enable-design-frontend:8081"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

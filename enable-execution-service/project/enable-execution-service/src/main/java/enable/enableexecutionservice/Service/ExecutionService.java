@@ -7,7 +7,6 @@ import enable.enableexecutionservice.Model.Execution;
 import enable.enableexecutionservice.Repository_Abstraction.ExecutionRepository;
 import enable.enableexecutionservice.Repository_Abstraction.TaskRepository;
 import enable.enableexecutionservice.Service_Abstraction.IExecutionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,18 +16,17 @@ import java.util.Objects;
 
 @Service
 public class ExecutionService implements IExecutionService {
+    private final ExecutionRepository executionRepository;
+    private final TaskRepository taskRepository;
+    private final ProcessFileHelper processFileHelper;
+    private final ExecutionEngineServiceHelper executionEngineServiceHelper;
 
-    @Autowired
-    private ExecutionRepository executionRepository;
-
-    @Autowired
-    private TaskRepository taskRepository;
-
-    @Autowired
-    private ProcessFileHelper processFileHelper;
-
-    @Autowired
-    private ExecutionEngineServiceHelper executionEngineServiceHelper;
+    public ExecutionService(ExecutionRepository executionRepository, TaskRepository taskRepository, ProcessFileHelper processFileHelper, ExecutionEngineServiceHelper executionEngineServiceHelper) {
+        this.executionRepository = executionRepository;
+        this.taskRepository = taskRepository;
+        this.processFileHelper = processFileHelper;
+        this.executionEngineServiceHelper = executionEngineServiceHelper;
+    }
 
     @Override
     public List<ExecutionDto> getExecutionsByUserId(Long userId) {
@@ -134,7 +132,7 @@ public class ExecutionService implements IExecutionService {
                 .orElseThrow(() -> new IllegalArgumentException("Main task not found for execution with ID: " + executionDto.getId())));
 
         // Include process of main task
-        mainTask = processFileHelper.includeProcessForTask(executionDto.getProcessFileId(), mainTask);
+        mainTask = processFileHelper.includeProcessForTask(mainTask);
 
         executionDto.setMainTask(mainTask);
 

@@ -6,7 +6,6 @@ import enable.enableexecutionservice.Dto.ProcessFileDto;
 import enable.enableexecutionservice.Dto.TaskDto;
 import enable.enableexecutionservice.Model.ProcessFileInstance;
 import enable.enableexecutionservice.Repository_Abstraction.ProcessFileRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,11 +14,13 @@ import java.util.List;
 
 @Service
 public class ProcessFileHelper {
-    @Autowired
-    private ProcessFileRepository processFileRepository;
+    private final ProcessFileRepository processFileRepository;
+    private final DtoFilterHelper dtoFilterHelper;
 
-    @Autowired
-    private DtoFilterHelper dtoFilterHelper;
+    public ProcessFileHelper(ProcessFileRepository processFileRepository, DtoFilterHelper dtoFilterHelper) {
+        this.processFileRepository = processFileRepository;
+        this.dtoFilterHelper = dtoFilterHelper;
+    }
 
     public ProcessFileDto getProcessFileById(Long id) {
         return modelToDto(processFileRepository.findById(id)
@@ -40,22 +41,22 @@ public class ProcessFileHelper {
         processFileRepository.deleteById(id);
     }
 
-    public TaskDto includeProcessForTask(Long processFileId, TaskDto taskDto) {
+    public TaskDto includeProcessForTask(TaskDto taskDto) {
         // Check parameters
-        if (processFileId == null) {
-            throw new IllegalArgumentException("processFileId cannot be null");
-        }
         if (taskDto == null) {
             throw new IllegalArgumentException("taskDto cannot be null");
         }
         if (taskDto.getId() == null) {
             throw new IllegalArgumentException("id of executionDto cannot be null");
         }
+        if (taskDto.getProcessFileId() == null) {
+            throw new IllegalArgumentException("processFileId of taskDto with id:" + taskDto.getId() + ", cannot be null");
+        }
         if (taskDto.getProcessId() == null) {
             throw new IllegalArgumentException("processId of taskDto with id:" + taskDto.getId() + ", cannot be null");
         }
 
-        ProcessFileDto processFileDto = getProcessFileById(processFileId);
+        ProcessFileDto processFileDto = getProcessFileById(taskDto.getProcessFileId());
 
         ProcessDto filter = new ProcessDto();
         filter.setId(taskDto.getProcessId());
@@ -65,11 +66,8 @@ public class ProcessFileHelper {
         return taskDto;
     }
 
-    public List<TaskDto> includeProcessForTaskList(Long processFileId, List<TaskDto> list) {
+    public List<TaskDto> includeProcessForTaskList(List<TaskDto> list) {
         // Check parameters
-        if (processFileId == null) {
-            throw new IllegalArgumentException("processFileId cannot be null");
-        }
         if (list == null) {
             throw new IllegalArgumentException("list cannot be null");
         }
@@ -77,7 +75,7 @@ public class ProcessFileHelper {
         List<TaskDto> result = new ArrayList<>();
 
         for (TaskDto task: list) {
-            result.add(this.includeProcessForTask(processFileId, task));
+            result.add(this.includeProcessForTask(task));
         }
 
         return result;

@@ -4,7 +4,6 @@ import enable.enableexecutionservice.Dto.*;
 import enable.enableexecutionservice.Repository_Abstraction.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -13,14 +12,16 @@ import java.util.*;
 public class ExecutionEngineServiceHelper {
     // TODO: remove for production
     private static final Logger logger = LoggerFactory.getLogger(ExecutionEngineServiceHelper.class);
+    private final DtoFilterHelper dtoFilterHelper;
+    private final TaskRepository taskRepository;
 
-    @Autowired
-    private DtoFilterHelper dtoFilterHelper;
+    public ExecutionEngineServiceHelper(DtoFilterHelper dtoFilterHelper, TaskRepository taskRepository) {
+        this.dtoFilterHelper = dtoFilterHelper;
+        this.taskRepository = taskRepository;
+    }
 
-    @Autowired
-    private TaskRepository taskRepository;
 
-    public List<TaskDto> concludeTask(TaskDto task, Integer status, Long userId, ProcessFileDto processFile, List<TaskDto> runningTasksInExecution) {
+    public List<TaskDto> concludeTask(TaskDto task, Integer status, Long userId, ProcessFileDto processFile, List<TaskDto> runningTasks) {
         // Check parameters
         if (task == null) {
             throw new IllegalArgumentException("task cannot be null");
@@ -37,7 +38,7 @@ public class ExecutionEngineServiceHelper {
         if (processFile.getConnections() == null) {
             throw new IllegalArgumentException("connections of processFile with id:" + processFile.getId() + ", cannot be null");
         }
-        if (runningTasksInExecution == null) {
+        if (runningTasks == null) {
             throw new IllegalArgumentException("runningTasksInExecution cannot be null");
         }
 
@@ -46,8 +47,10 @@ public class ExecutionEngineServiceHelper {
             throw new IllegalArgumentException("Task is already concluded. Can only conclude task with status 0 (Running).");
         }
 
+
         // Create result
         List<TaskDto> result = new ArrayList<>();
+        List<TaskDto> runningTasksForConcludeParents = runningTasks;
 
         // Conclude task
         task.setStatus(status);
@@ -58,24 +61,37 @@ public class ExecutionEngineServiceHelper {
 
         // If status is Completed or Terminated, then conclude parents and add to start of result
         if (status == 1 || status == 4) {
-            result.addAll(0, this.concludeParents(task, status, userId, runningTasksInExecution, processFile.getConnections()));
+            result.addAll(0, this.concludeParents(task, status, userId, runningTasksForConcludeParents, processFile.getConnections()));
             logger.info("concludeTask > result size after adding result of conclude parents: {}", result.size());
         }
 
-        logger.info("concludeTask > runningTasksInExecution size before removing result: {}", runningTasksInExecution.size());
-        // Remove concluded tasks from running tasks
-        // Iterate over the result list
-        Iterator<TaskDto> iterator = runningTasksInExecution.iterator();
-        while (iterator.hasNext()) {
-            TaskDto runningTask = iterator.next();
+        logger.info("concludeTask > runningTasksForConcludeParents size before removing result: {}", runningTasksForConcludeParents.size());
 
-            for (TaskDto concludedTask : result) {
-                if (runningTask.getId().equals(concludedTask.getId())) {
-                    iterator.remove();
-                }
+        // Remove concluded tasks from running tasks
+        List<TaskDto> tasksForConcludeChildren = new ArrayList<>();
+        for (TaskDto runningTask: runningTasksForConcludeParents) {
+            //Find task in result
+            TaskDto taskFilter = new TaskDto();
+            taskFilter.setId(runningTask.getId());
+            List<TaskDto> foundTasksInResult = new ArrayList<>(dtoFilterHelper.filterTasks(result, taskFilter));
+
+            if (foundTasksInResult.size() > 0) {
+                // if found add result task
+                tasksForConcludeChildren.addAll(foundTasksInResult);
+                logger.info("concludeTask > result size: {}", result.size());
+                logger.info("concludeTask > result contains task with id: {}", runningTask.getId());
+            }
+            else {
+                // if not found add running task
+                tasksForConcludeChildren.add(runningTask);
+                logger.info("concludeTask > result size: {}", result.size());
+                logger.info("concludeTask > result does not contain task with id: {}", runningTask.getId());
             }
         }
-        logger.info("concludeTask > runningTasksInExecution size after removing result: {}", runningTasksInExecution.size());
+
+
+
+        logger.info("concludeTask > runningTasksForConcludeChildren size after removing result: {}", tasksForConcludeChildren.size());
 
         // Conclude children by moving back down again from the highest parent
         /// If status is Completed set all to Skipped, otherwise to status value (Interrupted or Terminated)
@@ -85,7 +101,7 @@ public class ExecutionEngineServiceHelper {
             childrenStatus = 3;
         }
 
-        List<TaskDto> concludedChildren = this.concludeChildren(result.get(0).getId(), childrenStatus, userId, runningTasksInExecution);
+        List<TaskDto> concludedChildren = this.concludeChildren(result.get(0).getId(), childrenStatus, userId, tasksForConcludeChildren);
         result.addAll(concludedChildren);
         logger.info("concludeTask > result size after adding result of concludeChildren: {}", result.size());
 
@@ -93,7 +109,7 @@ public class ExecutionEngineServiceHelper {
     }
 
     // Either with completed or terminated. Ordered from highest to lowest parent
-    private List<TaskDto> concludeParents(TaskDto task, Integer status, Long userId, List<TaskDto> runningTasksInExecution, List<ConnectionDto> connections) {
+    private List<TaskDto> concludeParents(TaskDto task, Integer status, Long userId, List<TaskDto> runningTasks, List<ConnectionDto> connections) {
         // Check parameters
         if (task == null) {
             throw new IllegalArgumentException("task cannot be null");
@@ -101,7 +117,7 @@ public class ExecutionEngineServiceHelper {
         if (userId == null) {
             throw new IllegalArgumentException("userId cannot be null");
         }
-        if (runningTasksInExecution == null) {
+        if (runningTasks == null) {
             throw new IllegalArgumentException("runningTasksInExecution cannot be null");
         }
         if (connections == null) {
@@ -112,7 +128,7 @@ public class ExecutionEngineServiceHelper {
 
         Long childProcessIdToParse = task.getProcessId();
 
-        logger.info("concludeTask > concludeParents > runningTasksInExecution size before parsing: {}", runningTasksInExecution.size());
+        logger.info("concludeTask > concludeParents > runningTasksForConcludeChildren size before parsing: {}", runningTasks.size());
 
         while (childProcessIdToParse != null) {
             logger.info("concludeTask > concludeParents > childProcessIdToParse: {}", childProcessIdToParse);
@@ -135,7 +151,7 @@ public class ExecutionEngineServiceHelper {
 
                 TaskDto taskFilter = new TaskDto();
                 taskFilter.setProcessId(parentConnectionsFromChildTask.get(0).getDestinationProcessId());
-                TaskDto parentTaskToConclude = dtoFilterHelper.filterTasks(runningTasksInExecution, taskFilter).get(0);
+                TaskDto parentTaskToConclude = new ArrayList<>(dtoFilterHelper.filterTasks(runningTasks, taskFilter)).get(0);
 
                 logger.info("concludeTask > concludeParents > concluded parent task (parentTaskToConclude) id: {}", parentTaskToConclude.getId());
 
@@ -147,7 +163,7 @@ public class ExecutionEngineServiceHelper {
                 result.add(0, parentTaskToConclude);
 
                 // Add id of task to parse next
-                childProcessIdToParse = parentTaskToConclude.getId();
+                childProcessIdToParse = parentTaskToConclude.getProcessId();
             }
             else {
                 childProcessIdToParse = null;
@@ -156,7 +172,7 @@ public class ExecutionEngineServiceHelper {
         return result;
     }
 
-    private List<TaskDto> concludeChildren(Long taskId, Integer status, Long userId, List<TaskDto> runningTasksInExecution) {
+    private List<TaskDto> concludeChildren(Long taskId, Integer status, Long userId, List<TaskDto> taskDtos) {
         // Check parameters
         if (taskId == null) {
             throw new IllegalArgumentException("taskId cannot be null");
@@ -164,7 +180,7 @@ public class ExecutionEngineServiceHelper {
         if (userId == null) {
             throw new IllegalArgumentException("userId cannot be null");
         }
-        if (runningTasksInExecution == null) {
+        if (taskDtos == null) {
             throw new IllegalArgumentException("runningTasksInExecution cannot be null");
         }
 
@@ -180,19 +196,20 @@ public class ExecutionEngineServiceHelper {
             logger.info("concludeTask > concludeChildren > parentIdToParse: {}", parentIdsToParse.get(0));
 
             TaskDto filter = new TaskDto();
-            filter.setStatus(0);
             filter.setParentTaskId(parentIdsToParse.get(0));
-            List<TaskDto> runningChildTasks = dtoFilterHelper.filterTasks(runningTasksInExecution, filter);
+            List<TaskDto> childTasks = dtoFilterHelper.filterTasks(taskDtos, filter);
 
-            for (TaskDto childTask : runningChildTasks) {
-                // Get and change task
-                childTask.setStatus(status);
-                childTask.setConcludedByUserId(userId);
+            for (TaskDto childTask : childTasks) {
+                if (childTask.getStatus() == 0) {
+                    // Get and change task
+                    childTask.setStatus(status);
+                    childTask.setConcludedByUserId(userId);
 
-                // Add task to result
-                result.add(childTask);
-                logger.info("concludeTask > concludeChildren > added childTask with id: {}", childTask.getId());
-                logger.info("concludeTask > concludeChildren > result size after adding childTask: {}", result.size());
+                    // Add task to result
+                    result.add(childTask);
+                    logger.info("concludeTask > concludeChildren > added childTask with id: {}", childTask.getId());
+                    logger.info("concludeTask > concludeChildren > result size after adding childTask: {}", result.size());
+                }
 
                 // Add id of task to parse next
                 parentIdsToParse.add(childTask.getId());
@@ -217,9 +234,6 @@ public class ExecutionEngineServiceHelper {
         }
         if (previousTask.getExecutionId() == null) {
             throw new IllegalArgumentException("executionId of previousTask with id:" + previousTask.getId() + ", cannot be null");
-        }
-        if (previousTask.getParentTaskId() == null) {
-            throw new IllegalArgumentException("parentTaskId of previousTask with id:" + previousTask.getId() + ", cannot be null");
         }
         if (processFile == null) {
             throw new IllegalArgumentException("processFile cannot be null");

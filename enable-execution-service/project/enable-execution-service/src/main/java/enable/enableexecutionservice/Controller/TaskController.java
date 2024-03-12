@@ -1,5 +1,6 @@
 package enable.enableexecutionservice.Controller;
 
+import enable.enableexecutionservice.Dto.GetTasksRequestBody;
 import enable.enableexecutionservice.Dto.TaskDto;
 import enable.enableexecutionservice.Service_Abstraction.ITaskService;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +18,6 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    @GetMapping("/execution/running")
-    public ResponseEntity<List<TaskDto>> getRunningTasksOfExecution(@RequestParam(value = "executionId") Long executionId) {
-        List<TaskDto> result = taskService.getRunningTasksOfExecution(executionId);
-
-        return ResponseEntity.ok(result);
-    }
-
     @GetMapping("/execution")
     public ResponseEntity<List<TaskDto>> getTasksOfExecution(@RequestParam(value = "executionId") Long executionId) {
         List<TaskDto> result = taskService.getTasksOfExecution(executionId);
@@ -32,6 +26,13 @@ public class TaskController {
     }
 
     @GetMapping
+    public ResponseEntity<List<TaskDto>> getTasks(@RequestBody GetTasksRequestBody requestBody) {
+        List<TaskDto> result = taskService.getTasks(requestBody);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/id")
     public ResponseEntity<TaskDto> getTask(@RequestParam(value = "id") Long id) {
         TaskDto result = taskService.getTask(id);
 
