@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyberry-auth-user-service-service
+spec:
+  selector:
+    app: cyberry-auth-user-service
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8080
