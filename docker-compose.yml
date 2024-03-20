@@ -1,5 +1,20 @@
 version: '3.9'
 
+# To start the services, run the following command: docker-compose up -d
+# To stop the services, run the following command: docker-compose down
+# To stop and remove the services, run the following command: docker-compose down --volumes
+# To view the logs of a service, run the following command: docker-compose logs -f <service_name>
+# To view the logs of all services, run the following command: docker-compose logs -f
+# When integrating in workflow, set environment variables like this:
+#  - name: Deploy to Docker
+#    run: docker-compose up -d
+#    env:
+#      DB_EXECUTION_ROOT_PASSWORD: ${{ secrets.DB_EXECUTION_ROOT_PASSWORD }}
+#      DB_EXECUTION_PASSWORD: ${{ secrets.DB_EXECUTION_PASSWORD }}
+#      DB_USER_ROOT_PASSWORD: ${{ secrets.DB_USER_ROOT_PASSWORD }}
+#      DB_USER_PASSWORD: ${{ secrets.DB_USER_PASSWORD }}
+#      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
 services:
   enable-registry:
     build:
@@ -9,19 +24,21 @@ services:
     expose:
       - "8761"
     environment:
-      spring.profiles.active: prod
+      spring.profiles.active: 'prod'
 
   enable-execution-database:
     image: mysql:8.0.32
     container_name: enable-execution-database
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: 'executiondb'
-      MYSQL_ROOT_PASSWORD: 'secret'
-    ports:
-      - "3306:3306"
+      MYSQL_DATABASE: 'execution-database'
+      MYSQL_ROOT_PASSWORD: '${DB_EXECUTION_ROOT_PASSWORD:-secret}'
+      MYSQL_USER: 'main-user'
+      MYSQL_PASSWORD: '${DB_EXECUTION_PASSWORD:-secret}'
+    expose:
+      - "3306"
     volumes:
-      - db_data_execution:/var/lib/mysql
+      - db-data-execution:/var/lib/mysql
 
   enable-execution-service:
     build:
@@ -35,11 +52,45 @@ services:
       - enable-registry
       - enable-execution-database
     environment:
-      spring.profiles.active: prod
-      SPRING_DATASOURCE_URL: jdbc:mysql://enable-execution-database:3306/executiondb?useSSL=false&allowPublicKeyRetrieval=true
-      DB_USERNAME: root
-      DB_PASSWORD: secret
-      EUREKA_SERVER: http://enable-registry:8761/eureka
+      spring.profiles.active: 'prod'
+      SPRING_DATASOURCE_URL: 'jdbc:mysql://enable-execution-database:3306/execution-database?useSSL=false&allowPublicKeyRetrieval=true'
+      DB_USERNAME: 'main-user'
+      DB_PASSWORD: '${DB_EXECUTION_PASSWORD:-secret}'
+      EUREKA_SERVER: 'http://enable-registry:8761/eureka'
+
+  enable-user-database:
+    image: mysql:8.0.32
+    container_name: enable-user-database
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: 'user-database'
+      MYSQL_ROOT_PASSWORD: '${DB_USER_ROOT_PASSWORD:-secret}'
+      MYSQL_USER: 'main-user'
+      MYSQL_PASSWORD: '${DB_USER_PASSWORD:-secret}'
+    expose:
+      - "3306"
+    volumes:
+      - db-data-user:/var/lib/mysql
+
+  enable-user-service:
+    build:
+      context: ./enable-user-service
+      dockerfile: ./docker/Dockerfile
+    container_name: enable-user-service
+    restart: unless-stopped
+    expose:
+      - "8763"
+    depends_on:
+      - enable-registry
+      - enable-user-database
+    environment:
+      spring.profiles.active: 'prod'
+      SPRING_DATASOURCE_URL: 'jdbc:mysql://enable-user-database:3306/user-database?useSSL=false&allowPublicKeyRetrieval=true'
+      DB_USERNAME: 'main-user'
+      DB_PASSWORD: '${DB_USER_PASSWORD:-secret}'
+      JWT_SECRET: '${JWT_SECRET:-cOWF7VcdAtM0so3Bb7ycyrREi3HWIFafcvgM7phQ31osqRODu8rH7pDOleOGdaqp}'
+      JWT_EXPIRATION: '86400000'
+      EUREKA_SERVER: 'http://enable-registry:8761/eureka'
 
 #  enable-design-frontend:
 #    build:
@@ -61,10 +112,11 @@ services:
     depends_on:
       - enable-registry
       - enable-execution-service
+      - enable-user-service
     environment:
-      spring.profiles.active: prod
-      EUREKA_SERVER: http://enable-registry:8761/eureka
-
+      spring.profiles.active: 'prod'
+      EUREKA_SERVER: 'http://enable-registry:8761/eureka'
 
 volumes:
-  db_data_execution:
+  db-data-execution:
+  db-data-user:

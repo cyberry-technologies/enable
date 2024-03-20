@@ -9,7 +9,6 @@ import enable.enableuserservice.Service_Interface.IUserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
 import java.net.URI;
@@ -26,7 +25,7 @@ public class AuthController {
     }
 
 
-    @PostMapping("/signup")
+    @PostMapping("/signUp")
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         if(userService.isUsernameTaken(signUpRequest.getUsername())) {
             return ResponseEntity.badRequest().body("Username is already in use!");
@@ -40,14 +39,11 @@ public class AuthController {
 
         System.out.println(result.getId());
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentContextPath().path("api/user/getProfileBiId/?id={id}")
-                .buildAndExpand(result.getUsername()).toUri();
-
-        return ResponseEntity.created(location).body("User registered successfully");
+        return ResponseEntity.created(URI.create("/user/get/id/?id=" + result.getId()))
+                .body(result);
     }
 
-    @PostMapping("/signin")
+    @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest signInRequest) {
 
         User user = userService.loginUser(signInRequest);
@@ -71,5 +67,8 @@ public class AuthController {
         return ResponseEntity.ok(!userService.isEmailTaken(email));
     }
 
-
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }

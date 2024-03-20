@@ -13,10 +13,32 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: enable-execution-service
-          uri: lb://enable-execution-service/api
+        - id: execution
+          uri: lb://enable-execution-service
           predicates:
             - Path=/execution/**
+          filters:
+            - RewritePath=/execution/(?<segment>.*), /api/execution/$\{segment}
+        - id: task
+          uri: lb://enable-execution-service
+          predicates:
+            - Path=/task/**
+          filters:
+            - RewritePath=/task/(?<segment>.*), /api/task/$\{segment}
+
+        - id: user
+          uri: lb://enable-user-service
+          predicates:
+            - Path=/user/**
+          filters:
+            - RewritePath=/user/(?<segment>.*), /api/user/$\{segment}
+        - id: auth
+          uri: lb://enable-user-service
+          predicates:
+            - Path=/auth/**
+          filters:
+            - RewritePath=/auth/(?<segment>.*), /api/auth/$\{segment}
+
         - id: enable-registry
           uri: lb://enable-registry
           predicates:

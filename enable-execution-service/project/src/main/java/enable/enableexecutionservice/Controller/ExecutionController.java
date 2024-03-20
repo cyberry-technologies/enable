@@ -20,25 +20,25 @@ public class ExecutionController {
         this.taskService = taskService;
     }
 
-    @GetMapping("/user")
+    @GetMapping("/get/userId")
     public ResponseEntity<List<ExecutionDto>> getExecutionsOfUser(@RequestParam(value = "userId") Long userId) {
         List<ExecutionDto> result = executionService.getExecutionsByUserId(userId);
 
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping
+    @GetMapping("/get/id")
     public ResponseEntity<ExecutionDto> getExecution(@RequestParam(value = "id") Long id) {
         ExecutionDto result = executionService.getExecution(id);
 
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/execute/new/processfile")
+    @PostMapping("/execute/new/processFile")
     public ResponseEntity<ExecutionDto> executeFromProcessFile(@RequestParam(value = "userId") Long userId, @RequestBody String processFileString) {
         ExecutionDto result = executionService.createExecutionFromProcessFile(userId, processFileString);
 
-        return ResponseEntity.created(URI.create("/execution/" + result.getId()))
+        return ResponseEntity.created(URI.create("/execution/get/id?id=" + result.getId()))
                 .body(result);
     }
 
@@ -55,5 +55,10 @@ public class ExecutionController {
     public ResponseEntity<Boolean> deleteExecution(@RequestParam(value = "id") Long id) {
         Boolean result = executionService.deleteExecution(id);
         return ResponseEntity.ok(result);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
     }
 }

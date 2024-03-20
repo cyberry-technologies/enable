@@ -3,6 +3,7 @@ package enable.enableexecutionservice.Controller;
 import enable.enableexecutionservice.Dto.GetTasksRequestBody;
 import enable.enableexecutionservice.Dto.TaskDto;
 import enable.enableexecutionservice.Service_Abstraction.ITaskService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,21 +19,21 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    @GetMapping("/execution")
+    @GetMapping("/get/executionId")
     public ResponseEntity<List<TaskDto>> getTasksOfExecution(@RequestParam(value = "executionId") Long executionId) {
         List<TaskDto> result = taskService.getTasksOfExecution(executionId);
 
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping
+    @GetMapping("/get")
     public ResponseEntity<List<TaskDto>> getTasks(@RequestBody GetTasksRequestBody requestBody) {
         List<TaskDto> result = taskService.getTasks(requestBody);
 
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/id")
+    @GetMapping("/get/id")
     public ResponseEntity<TaskDto> getTask(@RequestParam(value = "id") Long id) {
         TaskDto result = taskService.getTask(id);
 
@@ -58,5 +59,10 @@ public class TaskController {
         TaskDto result = taskService.claimTask(id, userId);
 
         return ResponseEntity.ok(result);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 }

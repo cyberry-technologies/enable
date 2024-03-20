@@ -28,9 +28,19 @@ public class ProcessFileHelper {
     }
 
     public ProcessFileDto addNew(String processFileString) {
-        //Check processFileString
-        if (stringToDto(processFileString) == null) {
-            throw new RuntimeException("Error parsing JSON in ProcessFile");
+        //Check processFileString and content
+        ProcessFileDto processFileDto = stringToDto(processFileString);
+        if (processFileDto == null) {
+            throw new RuntimeException("Process file corrupt: error parsing JSON to object");
+        }
+        if (processFileDto.getMainProcessId() == null) {
+            throw new RuntimeException("Process file corrupt: main process ID empty or not found in JSON");
+        }
+        if (processFileDto.getProcesses().isEmpty()) {
+            throw new RuntimeException("Process file corrupt: processes list empty or not found in JSON");
+        }
+        if (processFileDto.getProcesses().stream().noneMatch(processDto -> processDto.getId().equals(processFileDto.getMainProcessId()))) {
+            throw new RuntimeException("Process file corrupt: process with main process ID could not be found in processes list");
         }
 
         return modelToDto(processFileRepository.save(new ProcessFileInstance(null, processFileString)));
@@ -62,7 +72,7 @@ public class ProcessFileHelper {
         filter.setId(taskDto.getProcessId());
         List<ProcessDto> foundProcesses = dtoFilterHelper.filterProcesses(processFileDto.getProcesses(), filter);
 
-        TaskDto result = new TaskDto(
+        return new TaskDto(
                 taskDto.getId(),
                 taskDto.getExecutionId(),
                 taskDto.getProcessFileId(),
@@ -74,8 +84,6 @@ public class ProcessFileHelper {
                 taskDto.getCreatedDateTime(),
                 foundProcesses.get(0),
                 null);
-
-        return result;
     }
 
     public List<TaskDto> includeProcessForTaskList(List<TaskDto> list) {
