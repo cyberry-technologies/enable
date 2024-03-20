@@ -14,21 +14,27 @@ spring:
     gateway:
       routes:
         - id: enable-execution-service
-          uri: lb://service
+          uri: lb://enable-execution-service/api
           predicates:
-            - Path=/service/**
+            - Path=/execution/**
+        - id: enable-registry
+          uri: lb://enable-registry
+          predicates:
+            - Path=/enable-registry/**
           filters:
             - StripPrefix=1
         - id: registry
-          uri: lb://registry
+          uri: lb://enable-registry
           predicates:
             - Path=/registry/**
           filters:
             - StripPrefix=1
         - id: eureka
-          uri: lb://registry
+          uri: lb://enable-registry
           predicates:
             - Path=/eureka/**
+          filters:
+            - StripPrefix=1
 
 info:
   app:

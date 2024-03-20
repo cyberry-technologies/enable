@@ -8,10 +8,7 @@ WORKDIR /app
 COPY ../project/pom.xml .
 COPY ../project/src ./src
 
-# Install Maven
-#RUN apk add --no-cache maven
-
 # Build the application with Maven
 RUN mvn clean package -DskipTests
 
-ENTRYPOINT ["java", "-jar", "target/cyberry-auth-user-service-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "target/enable-user-service-0.0.1-SNAPSHOT.jar"]

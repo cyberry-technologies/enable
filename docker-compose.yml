@@ -1,14 +1,24 @@
 version: '3.9'
 
-services:      
+services:
+  enable-registry:
+    build:
+      context: ./enable-registry
+      dockerfile: ./docker/Dockerfile
+    container_name: enable-registry
+    expose:
+      - "8761"
+    environment:
+      spring.profiles.active: prod
+
   enable-execution-database:
     image: mysql:8.0.32
     container_name: enable-execution-database
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: "processdb"
-      MYSQL_ROOT_PASSWORD: "secret"
-    ports: #ports forwarded for local development use only
+      MYSQL_DATABASE: 'executiondb'
+      MYSQL_ROOT_PASSWORD: 'secret'
+    ports:
       - "3306:3306"
     volumes:
       - db_data_execution:/var/lib/mysql
@@ -19,25 +29,42 @@ services:
       dockerfile: ./docker/Dockerfile
     container_name: enable-execution-service
     restart: unless-stopped
-    ports: #ports forwarded for local development use only
-      - "8080:8080"
+    expose:
+      - "8762"
     depends_on:
-      - enable-execution-database  
+      - enable-registry
+      - enable-execution-database
     environment:
       spring.profiles.active: prod
-      SPRING_DATASOURCE_URL: jdbc:mysql://enable-execution-database:3306/processdb?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://enable-execution-database:3306/executiondb?useSSL=false&allowPublicKeyRetrieval=true
       DB_USERNAME: root
-      DB_PASSWORD: "secret"
+      DB_PASSWORD: secret
+      EUREKA_SERVER: http://enable-registry:8761/eureka
 
-  enable-design-frontend:
+#  enable-design-frontend:
+#    build:
+#      context: ./enable-design-frontend
+#      dockerfile: ./docker/Dockerfile
+#    container_name: enable-design-frontend
+#    ports:
+#      - "80:8080"
+#    environment:
+#      ENABLE_API_GATEWAY_BASEURL: "http://enable-execution-service:8080"
+
+  enable-api-gateway:
     build:
-      context: ./enable-design-frontend
+      context: ./enable-api-gateway
       dockerfile: ./docker/Dockerfile
-    container_name: enable-design-frontend
+    container_name: enable-api-gateway
     ports:
-      - "80:8080"
+      - "127.0.0.1:8080:8760"
+    depends_on:
+      - enable-registry
+      - enable-execution-service
     environment:
-      ENABLE_API_GATEWAY_BASEURL: "http://enable-execution-service:8080"
+      spring.profiles.active: prod
+      EUREKA_SERVER: http://enable-registry:8761/eureka
+
 
 volumes:
   db_data_execution:

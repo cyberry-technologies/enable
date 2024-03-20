@@ -11,4 +11,4 @@ COPY ../project/src ./src
 # Build the application with Maven
 RUN mvn clean package -DskipTests
 
-ENTRYPOINT ["java", "-jar", "target/enable-execution-service-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "target/enable-registry-0.0.1-SNAPSHOT.jar"]

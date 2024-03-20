@@ -8,9 +8,6 @@ WORKDIR /app
 COPY ../project/pom.xml .
 COPY ../project/src ./src
 
-# Install Maven
-#RUN apk add --no-cache maven
-
 # Build the application with Maven
 RUN mvn clean package -DskipTests
 
