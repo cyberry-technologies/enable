@@ -9,7 +9,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class ProfileRequestDto {
+public class ProfileRequest {
     private Long id;
     private String jwt;
 }
