@@ -72,25 +72,25 @@ services:
     volumes:
       - db-data-user:/var/lib/mysql
 
-  enable-user-service:
-    build:
-      context: ./enable-user-service
-      dockerfile: ./docker/Dockerfile
-    container_name: enable-user-service
-    restart: unless-stopped
-    expose:
-      - "8763"
-    depends_on:
-      - enable-registry
-      - enable-user-database
-    environment:
-      spring.profiles.active: 'prod'
-      SPRING_DATASOURCE_URL: 'jdbc:mysql://enable-user-database:3306/user-database?useSSL=false&allowPublicKeyRetrieval=true'
-      DB_USERNAME: 'main-user'
-      DB_PASSWORD: '${DB_USER_PASSWORD:-secret}'
-      JWT_SECRET: '${JWT_SECRET:-cOWF7VcdAtM0so3Bb7ycyrREi3HWIFafcvgM7phQ31osqRODu8rH7pDOleOGdaqp}'
-      JWT_EXPIRATION: '86400000'
-      EUREKA_SERVER: 'http://enable-registry:8761/eureka'
+#  enable-user-service:
+#    build:
+#      context: ./enable-user-service
+#      dockerfile: ./docker/Dockerfile
+#    container_name: enable-user-service
+#    restart: unless-stopped
+#    expose:
+#      - "8763"
+#    depends_on:
+#      - enable-registry
+#      - enable-user-database
+#    environment:
+#      spring.profiles.active: 'prod'
+#      SPRING_DATASOURCE_URL: 'jdbc:mysql://enable-user-database:3306/user-database?useSSL=false&allowPublicKeyRetrieval=true'
+#      DB_USERNAME: 'main-user'
+#      DB_PASSWORD: '${DB_USER_PASSWORD:-secret}'
+#      JWT_SECRET: '${JWT_SECRET:-cOWF7VcdAtM0so3Bb7ycyrREi3HWIFafcvgM7phQ31osqRODu8rH7pDOleOGdaqp}'
+#      JWT_EXPIRATION: '86400000'
+#      EUREKA_SERVER: 'http://enable-registry:8761/eureka'
 
 #  enable-design-frontend:
 #    build:
@@ -112,9 +112,14 @@ services:
     depends_on:
       - enable-registry
       - enable-execution-service
-      - enable-user-service
+      - enable-user-database
     environment:
       spring.profiles.active: 'prod'
+      SPRING_DATASOURCE_URL: 'jdbc:mysql://enable-user-database:3306/user-database?useSSL=false&allowPublicKeyRetrieval=true'
+      DB_USERNAME: 'main-user'
+      DB_PASSWORD: '${DB_USER_PASSWORD:-secret}'
+      JWT_SECRET: '${JWT_SECRET:-cOWF7VcdAtM0so3Bb7ycyrREi3HWIFafcvgM7phQ31osqRODu8rH7pDOleOGdaqp}'
+      JWT_EXPIRATION: '86400000'
       EUREKA_SERVER: 'http://enable-registry:8761/eureka'
 
 volumes:
