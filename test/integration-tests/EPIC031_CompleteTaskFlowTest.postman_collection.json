@@ -1,0 +1,1818 @@
+{
+	"info": {
+		"_postman_id": "18032e30-b772-4e57-b536-725be9b9ea79",
+		"name": "EPIC031_CompleteTaskFlowTest",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17538466"
+	},
+	"item": [
+		{
+			"name": "create execution",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', false);",
+							"",
+							"pm.test(\"Execution and mainTask correctly added\", () => {",
+							"    pm.response.to.have.status(204);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', true);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fileName\": \"Process - Integration test.json\",\n    \"mainProcessId\": 0,\n    \"openedProcessId\": 0,\n    \"selectedProcessId\": 0,\n    \"processes\": [\n        {\n            \"id\": 0,\n            \"parentProcessId\": null,\n            \"type\": \"0\",\n            \"name\": \"Test\",\n            \"description\": \"##1: Empty## \\nTests the most basic process: one without child processes. It should just be there as the lowest task for a user to complete. Additionally, because it's the first process of the processFile, it should be created when the execution is first created/ run.\\n\\nOn: Creation of Execution\\n-> Running:     Test + 1\\n\\nOn: Completion of <1: Empty>\\n-> Completed:   1\\n-> Running:     2 + 2.1\\n\\n\\n##2: Merge at end##\\nTests the scenario where 2 connections lead into the end of the parent process. The logic should be: if the end is reached by just 1 connection from a complete process. The parent process is done, as in using a 'return' in code, and all 'Running' processes below are either 'Completed' for the one that reached it first and 'Skipped' for the others that did not.\\n\\nOn: Completion of 2.1\\n-> Completed:   2.1\\n-> Running:     2 + 2.2 + 2.3\\n\\nOn: Completion of 2.2\\n-> Completed:   2.1 + 2.2 + 2\\n-> Skipped:     2.3\\n-> Running:     3 + 3.1 + 3.2\\n\\n\\n##3: Split at Start##\\nTests if the correct things happen when a process immediately splits at the start and after when they merge into 1 process again. The logic should be: 1 - When multiple connections come out of a newly completed process, all create a new task with the destination process. 2 - When multiple connections lead into 1 non-parent process, every time an origin process is completed, a new task of the destination is added, even if it already exists or is completed. This behaviour can be captured by using an IF beforehand that uses a boolean to checks if the task is already created. 3 - If one path reaches the end of the parent process, all other paths are skipped.\\n\\nOn: Completion of 3.1\\n-> Completed:   3.1 \\n-> Running:     3 + 3.2 + 3.3\\n\\nOn: Completion of 3.2\\n-> Completed:   3.1 + 3.2\\n-> Running:     3 + 3.3 + 3.3\\n\\nOn: Completion of 3.3\\n-> Completed:   2 + 3.1 + 3.2 + 3.3 + 3\\n-> Skipped:     3.3\\n-> Running:     4 + 4.1\\n\\n\\n##4: Loop and if##\\nThis tests the loop and IF functionality. IF is an external process that interrupts if the condition is not met, and completes if the condition is met. The logic should constantly create and complete 4.1 and 4.2, and 4.3 every time after 4.1 until the IF condition is met and the parent is completed.\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   4.1 + 4.2\\n-> Running:     4.1 + 4.3 + 4.4\\n\\nOn: Completion of 4.3\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Running:     4.1 + 4.4\\n\\nOn: Interruption of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Interrupted: 4.4\\n-> Running:     4.1\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1\\n-> Interrupted: 4.4\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   3 + 4.1 + 4.2 + 4.3 + 4.1 + 4.2\\n-> Interrupted: 4.4\\n-> Running:     4.3 + 4.4\\n\\nOn: Completion of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1 + 4.2 + 4.4 + 4 \\n-> Interrupted: 4.4\\n-> Skipped:     4.3\\n-> Running:     5 + 5.1 + 5.2 + 5.3\\n\\n\\n##5: Conclude child tasks##\\nThis is about testing the child conclusion functions. The logic should be: When the parent is concluded with 'Interrupted', all the running child tasks should be concluded with 'Interrupted'. When the parent is concluded with 'Completed', all the running child tasks should be concluded with 'Skipped'. This should also happen when the completion leads to the completion of a parent task, in this case the \\\"sibling\\\" tasks should be concluded with 'Skipped' as well.\\n\\nOn: Interruption of 5.1\\n-> Interrupted: 5.1 + 5.1.1\\n-> Running:     5.2 + 5.2.1 + 5.3 + 5.3.1\\n\\nOn: Completion of 5.2\\n-> Interrupted: 5.1 + 5.1.1\\n-> Completed:   5.2 + 5.2.1 + 5\\n-> Skipped:     5.3 + 5.3.1\\n-> Running:     6\\n\\n\\n##6: Execution completed##\\nThis is the final test. When the process is finished, the test process should be finished. It should then show that the execution is also finished and not running anymore. It should still be possible to see the specific tasks and their statuses and results.\\n\\nOn: Completion of <6: Execution completed>\\n-> Completed:   6 + Test + whole execution\\n-> Interrupted: No new\\n-> Skipped:     No new\\n-> Terminated:  None\\n-> Running:     None\"\n        },\n        {\n            \"id\": 1,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"1: Empty\",\n            \"x\": 32.258365613478325,\n            \"y\": 13.939393939393941,\n            \"description\": \"##1: Empty## \\nTests the most basic process: one without child processes. It should just be there as the lowest task for a user to complete. Additionally, because it's the first process of the processFile, it should be created when the execution is first created/ run.\\n\\nOn: Creation of Execution\\n-> Running:     Test + 1\\n\\nOn: Completion of <1: Empty>\\n-> Completed:   1\\n-> Running:     Test + 2 + 2.1\"\n        },\n        {\n            \"id\": 2,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"2: Merge at end\",\n            \"x\": 30.4662341905073,\n            \"y\": 26.060606060606062,\n            \"description\": \"##2: Merge at end##\\nTests the scenario where 2 connections lead into the end of the parent process. The logic should be: if the end is reached by just 1 connection from a complete process. The parent process is done, as in using a 'return' in code, and all 'Running' processes below are either 'Completed' for the one that reached it first and 'Skipped' for the others that did not.\\n\\nOn: Completion of 2.1\\n-> Completed:   2.1\\n-> Running:     Test + 2 + 2.2 + 2.3\\n\\nOn: Completion of 2.2\\n-> Completed:   2.1 + 2.2 + 2\\n-> Skipped:     2.3\\n-> Running:     Test + 3 + 3.1 + 3.2\"\n        },\n        {\n            \"id\": 3,\n            \"parentProcessId\": 0,\n            \"type\": \"0\",\n            \"name\": \"3: Split at start\",\n            \"x\": 29.86885704951697,\n            \"y\": 33.73737373737374,\n            \"description\": \"##3: Split at Start##\\nTests if the correct things happen when a process immediately splits at the start and after when they merge into 1 process again. The logic should be: 1 - When multiple connections come out of a newly completed process, all create a new task with the destination process. 2 - When multiple connections lead into 1 non-parent process, every time an origin process is completed, a new task of the destination is added, even if it already exists or is completed. This behaviour can be captured by using an IF beforehand that uses a boolean to checks if the task is already created. 3 - If one path reaches the end of the parent process, all other paths are skipped.\\n\\nOn: Completion of 3.1\\n-> Completed:   3.1 \\n-> Running:     Test + 3 + 3.2 + 3.3\\n\\nOn: Completion of 3.2\\n-> Completed:   3.1 + 3.2\\n-> Running:     Test + 3 + 3.3 + 3.3\\n\\nOn: Completion of 3.3\\n-> Completed:   2 + 3.1 + 3.2 + 3.3 + 3\\n-> Skipped:     3.3\\n-> Running:     4 + 4.1\"\n        },\n        {\n            \"id\": 4,\n            \"parentProcessId\": 2,\n            \"type\": 0,\n            \"name\": \"2.1\",\n            \"x\": 15.979838521491576,\n            \"y\": 49.898989898989896\n        },\n        {\n            \"id\": 5,\n            \"parentProcessId\": 2,\n            \"type\": 0,\n            \"name\": \"2.2\",\n            \"x\": 54.82491923114578,\n            \"y\": 36.4551863041289\n        },\n        {\n            \"id\": 6,\n            \"parentProcessId\": 2,\n            \"type\": 0,\n            \"name\": \"2.3\",\n            \"x\": 52.77777777777778,\n            \"y\": 66.54366543665436\n        },\n        {\n            \"id\": 7,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"4: Loop and If\",\n            \"x\": 30.018201334764548,\n            \"y\": 41.91919191919192,\n            \"description\": \"This tests the loop and IF functionality. IF is an external process that interrupts if the condition is not met, and completes if the condition is met. The logic should constantly create and complete 4.1 and 4.2, and 4.3 every time after 4.1 until the IF condition is met and the parent is completed.\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   4.1 + 4.2\\n-> Running:     4.1 + 4.3 + 4.4\\n\\nOn: Completion of 4.3\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Running:     4.1 + 4.4\\n\\nOn: Interruption of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3\\n-> Interrupted: 4.4\\n-> Running:     4.1\\n\\nOn: Completion of 4.1\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1\\n-> Interrupted: 4.4\\n-> Running:     4.2 + 4.3\\n\\nOn: Completion of 4.2\\n-> Completed:   3 + 4.1 + 4.2 + 4.3 + 4.1 + 4.2\\n-> Interrupted: 4.4\\n-> Running:     4.3 + 4.4\\n\\nOn: Completion of 4.4\\n-> Completed:   4.1 + 4.2 + 4.3 + 4.1 + 4.2 + 4.4 + 4 \\n-> Interrupted: 4.4\\n-> Skipped:     4.3\\n-> Running:     5 + 5.1 + 5.2 + 5.3\"\n        },\n        {\n            \"id\": 8,\n            \"parentProcessId\": 3,\n            \"type\": 0,\n            \"name\": \"3.1\",\n            \"x\": 28.125,\n            \"y\": 31.61131611316113\n        },\n        {\n            \"id\": 9,\n            \"parentProcessId\": 3,\n            \"type\": 0,\n            \"name\": \"3.2\",\n            \"x\": 27.430555555555557,\n            \"y\": 62.48462484624846\n        },\n        {\n            \"id\": 10,\n            \"parentProcessId\": 3,\n            \"type\": 0,\n            \"name\": \"3.3\",\n            \"x\": 60.06944444444444,\n            \"y\": 50.307503075030745\n        },\n        {\n            \"id\": 11,\n            \"parentProcessId\": 7,\n            \"type\": 0,\n            \"name\": \"4.1\",\n            \"x\": 27.69097222222222,\n            \"y\": 63.59163591635917\n        },\n        {\n            \"id\": 12,\n            \"parentProcessId\": 7,\n            \"type\": 0,\n            \"name\": \"4.2\",\n            \"x\": 30.03472222222222,\n            \"y\": 36.162361623616235\n        },\n        {\n            \"id\": 13,\n            \"parentProcessId\": 7,\n            \"type\": 0,\n            \"name\": \"4.3\",\n            \"x\": 61.28472222222222,\n            \"y\": 64.57564575645756\n        },\n        {\n            \"id\": 14,\n            \"parentProcessId\": 7,\n            \"type\": \"2\",\n            \"name\": \"4.4 IF\",\n            \"x\": 55.729166666666664,\n            \"y\": 37.63837638376384\n        },\n        {\n            \"id\": 16,\n            \"parentProcessId\": 0,\n            \"type\": \"0\",\n            \"name\": \"5: Conclude child tasks\",\n            \"x\": 28.898119195407663,\n            \"y\": 51.010101010101,\n            \"description\": \"##5: Conclude child tasks##\\nThis is about testing the child conclusion functions. The logic should be: When the parent is concluded with 'Interrupted', all the running child tasks should be concluded with 'Interrupted'. When the parent is concluded with 'Completed', all the running child tasks should be concluded with 'Skipped'. This should also happen when the completion leads to the completion of a parent task, in this case the \\\"sibling\\\" tasks should be concluded with 'Skipped' as well. \\n\\nOn: Interruption of 5.1\\n-> Interrupted: 5.1 + 5.1.1\\n-> Running:     5.2 + 5.2.1 + 5.3 + 5.3.1\\n\\nOn: Completion of 5.2\\n-> Interrupted: 5.1 + 5.1.1\\n-> Completed:   5.2 + 5.2.1 + 5\\n-> Skipped:     5.3 + 5.3.1\\n-> Running:     6\"\n        },\n        {\n            \"id\": 17,\n            \"parentProcessId\": 16,\n            \"type\": 0,\n            \"name\": \"5.1\",\n            \"x\": 39.576235590609976,\n            \"y\": 29.19191919191919\n        },\n        {\n            \"id\": 18,\n            \"parentProcessId\": 16,\n            \"type\": 0,\n            \"name\": \"5.2\",\n            \"x\": 37.18672702664862,\n            \"y\": 54.64646464646464\n        },\n        {\n            \"id\": 19,\n            \"parentProcessId\": 16,\n            \"type\": 0,\n            \"name\": \"5.3\",\n            \"x\": 36.664022028282076,\n            \"y\": 76.26262626262627\n        },\n        {\n            \"id\": 20,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"6. Types\",\n            \"x\": 29.271479908526626,\n            \"y\": 59.3939393939394\n        },\n        {\n            \"id\": 21,\n            \"parentProcessId\": 17,\n            \"type\": 0,\n            \"name\": \"5.1.1\",\n            \"x\": 39.426891305362396,\n            \"y\": 50.303030303030305\n        },\n        {\n            \"id\": 22,\n            \"parentProcessId\": 18,\n            \"type\": 0,\n            \"name\": \"5.2.1\",\n            \"x\": 46.67008913987026,\n            \"y\": 48.38383838383839\n        },\n        {\n            \"id\": 23,\n            \"parentProcessId\": 19,\n            \"type\": 0,\n            \"name\": \"5.3.1\",\n            \"x\": 44.57926914640407,\n            \"y\": 46.464646464646464\n        },\n        {\n            \"id\": 24,\n            \"parentProcessId\": 0,\n            \"type\": 0,\n            \"name\": \"Last: Execution Completed\",\n            \"x\": 73.02935548606898,\n            \"y\": 49.292929292929294,\n            \"description\": \"##Last: Execution completed##\\nThis is the final test. When the process is finished, the test process should be finished. It should then show that the execution is also finished and not running anymore. It should still be possible to see the specific tasks and their statuses and results.\\n\\nOn: Completion of <6: Execution completed>\\n-> Completed:   6 + Test + whole execution\\n-> Interrupted: No new\\n-> Skipped:     No new\\n-> Terminated:  None\\n-> Running:     None\"\n        }\n    ],\n    \"connections\": [\n        {\n            \"id\": 4,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 2,\n            \"destinationProcessId\": 4,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 5,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 4,\n            \"destinationProcessId\": 5,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 6,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 4,\n            \"destinationProcessId\": 6,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 7,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 6,\n            \"destinationProcessId\": 2,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 8,\n            \"parentProcessId\": 2,\n            \"originProcessId\": 5,\n            \"destinationProcessId\": 2,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 9,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 3,\n            \"destinationProcessId\": 8,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 10,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 3,\n            \"destinationProcessId\": 9,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 11,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 8,\n            \"destinationProcessId\": 10,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 12,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 9,\n            \"destinationProcessId\": 10,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 13,\n            \"parentProcessId\": 3,\n            \"originProcessId\": 10,\n            \"destinationProcessId\": 3,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 15,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 11,\n            \"destinationProcessId\": 13,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 16,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 11,\n            \"destinationProcessId\": 12,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 17,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 12,\n            \"destinationProcessId\": 11,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 18,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 7,\n            \"destinationProcessId\": 11,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 19,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 14,\n            \"destinationProcessId\": 7,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 20,\n            \"parentProcessId\": 7,\n            \"originProcessId\": 12,\n            \"destinationProcessId\": 14,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 22,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 17,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 23,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 18,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 24,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 19,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 25,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 17,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 26,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 18,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 27,\n            \"parentProcessId\": 16,\n            \"originProcessId\": 19,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 31,\n            \"parentProcessId\": 17,\n            \"originProcessId\": 21,\n            \"destinationProcessId\": 17,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 32,\n            \"parentProcessId\": 17,\n            \"originProcessId\": 17,\n            \"destinationProcessId\": 21,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 33,\n            \"parentProcessId\": 18,\n            \"originProcessId\": 22,\n            \"destinationProcessId\": 18,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 34,\n            \"parentProcessId\": 18,\n            \"originProcessId\": 18,\n            \"destinationProcessId\": 22,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 35,\n            \"parentProcessId\": 19,\n            \"originProcessId\": 23,\n            \"destinationProcessId\": 19,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 36,\n            \"parentProcessId\": 19,\n            \"originProcessId\": 19,\n            \"destinationProcessId\": 23,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 37,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 0,\n            \"destinationProcessId\": 1,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 38,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 0,\n            \"destinationProcessId\": 2,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 39,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 0,\n            \"destinationProcessId\": 3,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 40,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 0,\n            \"destinationProcessId\": 7,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 41,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 0,\n            \"destinationProcessId\": 16,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 43,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 0,\n            \"destinationProcessId\": 20,\n            \"isParentConnection\": true\n        },\n        {\n            \"id\": 44,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 1,\n            \"destinationProcessId\": 24,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 45,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 2,\n            \"destinationProcessId\": 24,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 46,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 3,\n            \"destinationProcessId\": 24,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 47,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 7,\n            \"destinationProcessId\": 24,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 48,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 16,\n            \"destinationProcessId\": 24,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 50,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 20,\n            \"destinationProcessId\": 24,\n            \"isParentConnection\": false\n        },\n        {\n            \"id\": 51,\n            \"parentProcessId\": 0,\n            \"originProcessId\": 24,\n            \"destinationProcessId\": 0,\n            \"isParentConnection\": true\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/execution/execute/new/processFile?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"execution",
+						"execute",
+						"new",
+						"processFile"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getExecutionsOfUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', false);",
+							"",
+							"pm.test(\"Empty execution list correctly retrieved\", () => {",
+							"    pm.response.to.have.status(200);",
+							"    ",
+							"    var responseBody = pm.response.json()[0];",
+							"",
+							"    // Assert if id exists and is not null",
+							"    pm.expect(responseBody).to.have.property('id');",
+							"    pm.expect(responseBody.id).to.not.be.null;",
+							"    ",
+							"    // Assert if processFileId exists and is not null",
+							"    pm.expect(responseBody).to.have.property('processFileId');",
+							"    pm.expect(responseBody.processFileId).to.not.be.null;",
+							"    ",
+							"    // Assert if mainTaskId exists and is not null",
+							"    pm.expect(responseBody).to.have.property('mainTaskId');",
+							"    pm.expect(responseBody.mainTaskId).to.not.be.null;",
+							"",
+							"    // Assert if mainTask exists and id is mainTaskId",
+							"    pm.expect(responseBody).to.have.property('mainTask');",
+							"    pm.expect(responseBody.mainTask.id).to.equal(responseBody.mainTaskId);",
+							"",
+							"    // Assert if mainTask.executionId exists and is saved executionId",
+							"    pm.expect(responseBody.mainTask).to.have.property('executionId');",
+							"    pm.expect(responseBody.mainTask.executionId).to.equal(responseBody.id);",
+							"",
+							"",
+							"    // Set execution id in environment variable",
+							"    pm.environment.set('executionId', responseBody.id);",
+							"    // Set execution id in environment variable",
+							"    pm.environment.set('processFileId', responseBody.processFileId);",
+							"    // Set main task id as mainTaskId in environment variable",
+							"    pm.environment.set('mainTaskId', responseBody.mainTaskId);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', true);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"execution",
+						"get",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getTasksOfExecution",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Executions correctly retrieved\", () => {",
+							"    pm.response.to.have.status(200);",
+							"    ",
+							"    var responseBody = pm.response.json();",
+							"",
+							"    var task1 = responseBody[0];",
+							"    var task2 = responseBody[1];",
+							"",
+							"    pm.expect(task1).to.have.property('id');",
+							"    pm.expect(task1.id).to.not.be.null;",
+							"    ",
+							"    pm.expect(task1).to.have.property('executionId');",
+							"    pm.expect(task1.executionId).to.not.be.null;",
+							"    pm.expect(task1.executionId).to.equal(pm.environment.get('executionId'));",
+							"    ",
+							"    pm.expect(task1).to.have.property('processFileId');",
+							"    pm.expect(task1.processFileId).to.not.be.null;",
+							"",
+							"    pm.expect(task1).to.have.property('processInfoId');",
+							"    pm.expect(task1.processInfoId).to.not.be.null;",
+							"",
+							"    pm.expect(task1).to.have.property('parentTaskId');",
+							"    pm.expect(task1.parentTaskId).to.be.null;",
+							"",
+							"    pm.expect(task1).to.have.property('taskStatus');",
+							"    pm.expect(task1.taskStatus).to.not.be.null;",
+							"    pm.expect(task1.taskStatus).to.equal(0);",
+							"    ",
+							"    pm.expect(task1).to.have.property('processInfo');",
+							"    pm.expect(task1.processInfo).to.not.be.null;",
+							"    pm.expect(task1.processInfo).to.have.property('name');",
+							"    pm.expect(task1.processInfo.name).to.not.be.null;",
+							"    pm.expect(task1.processInfo.name).to.equal('Test');",
+							"",
+							"",
+							"    pm.expect(task2).to.have.property('id');",
+							"    pm.expect(task2.id).to.not.be.null;",
+							"    ",
+							"    pm.expect(task2).to.have.property('executionId');",
+							"    pm.expect(task2.executionId).to.not.be.null;",
+							"    pm.expect(task2.executionId).to.equal(pm.environment.get('executionId'));",
+							"    ",
+							"    pm.expect(task2).to.have.property('processFileId');",
+							"    pm.expect(task2.processFileId).to.not.be.null;",
+							"",
+							"    pm.expect(task2).to.have.property('processInfoId');",
+							"    pm.expect(task2.processInfoId).to.not.be.null;",
+							"",
+							"    pm.expect(task2).to.have.property('parentTaskId');",
+							"    pm.expect(task2.parentTaskId).to.not.be.null;",
+							"",
+							"    pm.expect(task2).to.have.property('taskStatus');",
+							"    pm.expect(task2.taskStatus).to.not.be.null;",
+							"    pm.expect(task2.taskStatus).to.equal(0);",
+							"    ",
+							"    pm.expect(task2).to.have.property('processInfo');",
+							"    pm.expect(task2.processInfo).to.not.be.null;",
+							"    pm.expect(task2.processInfo).to.have.property('name');",
+							"    pm.expect(task2.processInfo.name).to.not.be.null;",
+							"    pm.expect(task2.processInfo.name).to.equal('1: Empty');",
+							"",
+							"    // Set task 1 id as mainTaskId in environment variable",
+							"    pm.environment.set('mainTaskId', task1.id);",
+							"    // Set task 2 id as subTaskId to collection variable",
+							"    pm.collectionVariables.set('subTaskId', task2.id);",
+							"    pm.collectionVariables.set('subTaskId2', responseBody[2].id);",
+							"    pm.collectionVariables.set('subTaskId3', responseBody[3].id);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    'Test',\r",
+							"    '1: Empty',\r",
+							"    '2: Merge at end',\r",
+							"    '2.1',\r",
+							"    '3: Split at start',\r",
+							"    '3.1',\r",
+							"    '3.2',\r",
+							"    '4: Loop and If',\r",
+							"    '4.1',\r",
+							"    '5: Conclude child tasks',\r",
+							"    '5.1',\r",
+							"    '5.1.1',\r",
+							"    '5.2',\r",
+							"    '5.2.1',\r",
+							"    '5.3',\r",
+							"    '5.3.1',\r",
+							"    '6. Types',\r",
+							"];\r",
+							"var completedNames = [];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/get/executionId?executionId={{executionId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"get",
+						"executionId"
+					],
+					"query": [
+						{
+							"key": "executionId",
+							"value": "{{executionId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 1: Empty",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    'Last: Execution Completed',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '1: Empty',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '1: Empty';\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 2.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    '2.2',\r",
+							"    '2.3'\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '2.1'\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '2.1';\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 2.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    'Last: Execution Completed',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '2: Merge at end',\r",
+							"    '2.2',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [\r",
+							"    '2.3',\r",
+							"];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '2.2';\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 3.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    '3.2',\r",
+							"    '3.3',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '3.1',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '3.1';\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 3.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    '3.3'\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '3.2',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '3.2';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 3.3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    'Last: Execution Completed',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '3.3',\r",
+							"    '3: Split at start',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [\r",
+							"    '3.3',\r",
+							"];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '3.3';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    '4.2',\r",
+							"    '4.3',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '4.1',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '4.1';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    '4.3',\r",
+							"    '4.4 IF',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '4.2',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '4.2';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [];\r",
+							"var completedNames = [\r",
+							"    '4.3',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '4.3';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "interrupt - 4.4 IF",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [];\r",
+							"var completedNames = [];\r",
+							"var interruptedNames = [\r",
+							"    '4.4 IF',\r",
+							"];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '4.4 IF';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/interrupt?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"interrupt"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.1 take2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    '4.2',\r",
+							"    '4.3',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '4.1',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '4.1';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.2 - take2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [\r",
+							"    '4.4 IF',\r",
+							"];\r",
+							"var completedNames = [\r",
+							"    '4.2',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '4.2';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 4.4 IF",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [];\r",
+							"var completedNames = [\r",
+							"    '4.4 IF',\r",
+							"    '4: Loop and If',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [\r",
+							"    '4.3',\r",
+							"];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '4.4 IF';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "interrupt - 5.1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [];\r",
+							"var completedNames = [];\r",
+							"var interruptedNames = [\r",
+							"    '5.1',\r",
+							"];\r",
+							"var skippedNames = [\r",
+							"    '5.1.1',\r",
+							"];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '5.1';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/interrupt?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"interrupt"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - 5.2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [];\r",
+							"var completedNames = [\r",
+							"    '5.2',\r",
+							"    '5: Conclude child tasks',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [\r",
+							"    '5.2.1',\r",
+							"    '5.3',\r",
+							"    '5.3.1',\r",
+							"];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = '5.2';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "complete - Last: Execution completed",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var pendingNames = [];\r",
+							"var completedNames = [\r",
+							"    'Test',\r",
+							"    'Last: Execution Completed',\r",
+							"];\r",
+							"var interruptedNames = [];\r",
+							"var skippedNames = [\r",
+							"    'Last: Execution Completed',\r",
+							"    'Last: Execution Completed',\r",
+							"    'Last: Execution Completed',\r",
+							"    'Last: Execution Completed',\r",
+							"    'Last: Execution Completed',\r",
+							"];\r",
+							"var terminatedNames = [];\r",
+							"\r",
+							"var nameToConclude = 'Last: Execution Completed';\r",
+							"\r",
+							"\r",
+							"\r",
+							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
+							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
+							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
+							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
+							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
+							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
+							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"complete"
+					],
+					"query": [
+						{
+							"key": "taskId",
+							"value": "{{idToConclude}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getTasksOfExecution Check all",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', false);",
+							"",
+							"var pendingNames = [];",
+							"var completedNames = [",
+							"    '1: Empty',",
+							"    '2.1',",
+							"    '2.2',",
+							"    '2: Merge at end',",
+							"    '3.1',",
+							"    '3.2',",
+							"    '3.3',",
+							"    '3: Split at start',",
+							"    '4.1',",
+							"    '4.2',",
+							"    '4.3',",
+							"    '4.1',",
+							"    '4.2',",
+							"    '4.4 IF',",
+							"    '4: Loop and If',",
+							"    '5.2',",
+							"    '5: Conclude child tasks',",
+							"    'Last: Execution Completed',",
+							"    'Test',",
+							"];",
+							"var interruptedNames = [",
+							"    '4.4 IF',",
+							"    '5.1',",
+							"];",
+							"var skippedNames = [",
+							"    '2.3',",
+							"    '3.3',",
+							"    '4.1',",
+							"    '4.3',",
+							"    '5.1.1',",
+							"    '5.2.1',",
+							"    '5.3',",
+							"    '5.3.1',",
+							"    '6. Types',",
+							"    'Last: Execution Completed',",
+							"    'Last: Execution Completed',",
+							"    'Last: Execution Completed',",
+							"    'Last: Execution Completed',",
+							"];",
+							"var terminatedNames = [];",
+							"",
+							"setTimeout(function() {",
+							"    checkTasks();",
+							"}, 1000);",
+							"",
+							"function assertTasksWithNamesExistInTasksWithStatus(tasks, taskStatus, names) {",
+							"    console.log('Checking for following tasks with taskStatus ' + taskStatus + ':');",
+							"    console.log(names);",
+							"",
+							"    var tasksWithStatusNames = [];",
+							"",
+							"    tasks.forEach((task, index) => {",
+							"        if (task.taskStatus == taskStatus) {",
+							"            tasksWithStatusNames.push(task.processInfo.name);",
+							"        }",
+							"    });",
+							"",
+							"    pm.expect(tasksWithStatusNames).to.be.an('array').that.has.lengthOf(names.length);",
+							"",
+							"    names.forEach((name, index) => {",
+							"        // Assert if 'names' array contains task processInfo name",
+							"        console.log('Checking for task with name ' + name + ' in tasks with taskStatus ' + taskStatus);",
+							"",
+							"        pm.expect(tasksWithStatusNames.includes(name)).to.be.true;",
+							"    });",
+							"}",
+							"",
+							"function checkTasks() {",
+							"    pm.test(\"Tasks correct\", () => {",
+							"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"",
+							"        pm.sendRequest({",
+							"            url: pm.environment.get('apiGatewayBaseUrl') ",
+							"                + '/task/get/executionId?executionId='",
+							"                + pm.environment.get('executionId'),",
+							"            method: 'GET',",
+							"        }, function (err, response) {",
+							"            if (err) {",
+							"                console.error(err);",
+							"                return;",
+							"            }",
+							"",
+							"        var tasks = response.json();",
+							"        console.log('tasks: ');",
+							"        console.log(tasks);",
+							"",
+							"        tasks.forEach((task, index) => {",
+							"            if (task.taskStatus == 0) {",
+							"                // Save id for future use",
+							"                pm.collectionVariables.set('taskId_' + task.processInfo.name, task.id);",
+							"            }",
+							"        });",
+							"",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, pendingNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, completedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, interruptedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, skippedNames);",
+							"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, terminatedNames);",
+							"        });",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', true);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/get/executionId?executionId={{executionId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"get",
+						"executionId"
+					],
+					"query": [
+						{
+							"key": "executionId",
+							"value": "{{executionId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"function assertTasksWithNamesExistInTasksWithStatus(tasks, taskStatus, names) {",
+					"    var tasksWithStatusNames = [];",
+					"",
+					"    tasks.forEach((task, index) => {",
+					"        if (task.taskStatus == taskStatus) {",
+					"            tasksWithStatusNames.push(task.processInfo.name);",
+					"        }",
+					"    });",
+					"",
+					"    names.forEach((name, index) => {",
+					"        // Assert if 'names' array contains task processInfo name",
+					"        pm.expect(tasksWithStatusNames.includes(name)).to.be.true;",
+					"    });",
+					"}",
+					"",
+					"function checkTasks() {",
+					"    pm.test(\"Tasks correct\", () => {",
+					"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+					"",
+					"        pm.sendRequest({",
+					"            url: pm.environment.get('apiGatewayBaseUrl') ",
+					"                + '/task/get/executionId?executionId='",
+					"                + pm.environment.get('executionId'),",
+					"            method: 'GET',",
+					"        }, function (err, response) {",
+					"            if (err) {",
+					"                console.error(err);",
+					"                return;",
+					"            }",
+					"",
+					"        var tasks = response.json();",
+					"",
+					"        tasks.forEach((task, index) => {",
+					"            if (task.taskStatus == 0) {",
+					"                // Save id for future use",
+					"                pm.collectionVariables.set('taskId_' + task.processInfo.name, task.id);",
+					"            }",
+					"        });",
+					"",
+					"        assertTasksWithNamesExistInTasksWithStatus(tasks, 0, JSON.parse(pm.collectionVariables.get('pendingNames')));",
+					"        assertTasksWithNamesExistInTasksWithStatus(tasks, 1, JSON.parse(pm.collectionVariables.get('completedNames')));",
+					"        assertTasksWithNamesExistInTasksWithStatus(tasks, 2, JSON.parse(pm.collectionVariables.get('interruptedNames')));",
+					"        assertTasksWithNamesExistInTasksWithStatus(tasks, 3, JSON.parse(pm.collectionVariables.get('skippedNames')));",
+					"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, JSON.parse(pm.collectionVariables.get('terminatedNames')));",
+					"        });",
+					"    });",
+					"}",
+					"",
+					"if (!pm.collectionVariables.get('excludeFromTaskCheckTest')) {",
+					"    setTimeout(function() {",
+					"        checkTasks();",
+					"    }, 2000);",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "taskId_Test",
+			"value": ""
+		},
+		{
+			"key": "taskId_1: Empty",
+			"value": ""
+		},
+		{
+			"key": "taskId_2: Merge at end",
+			"value": ""
+		},
+		{
+			"key": "taskId_2.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_2.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_2.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_3: Split at start",
+			"value": ""
+		},
+		{
+			"key": "taskId_3.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_3.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_3.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_4: Loop and If",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_4.4 IF",
+			"value": ""
+		},
+		{
+			"key": "taskId_5: Conclude child tasks",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.2",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.3",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.1.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.2.1",
+			"value": ""
+		},
+		{
+			"key": "taskId_5.3.1",
+			"value": ""
+		},
+		{
+			"key": "idToConclude",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "Function_setNameToConclude",
+			"value": ""
+		},
+		{
+			"key": "Function_setExpectedNames",
+			"value": ""
+		},
+		{
+			"key": "runningNames",
+			"value": ""
+		},
+		{
+			"key": "completedNames",
+			"value": ""
+		},
+		{
+			"key": "interruptedNames",
+			"value": ""
+		},
+		{
+			"key": "skippedNames",
+			"value": ""
+		},
+		{
+			"key": "terminatedNames",
+			"value": ""
+		},
+		{
+			"key": "isProcessCreationRequest",
+			"value": ""
+		},
+		{
+			"key": "taskId_6: Execution completed",
+			"value": ""
+		},
+		{
+			"key": "subTaskId",
+			"value": ""
+		},
+		{
+			"key": "subTaskId2",
+			"value": ""
+		},
+		{
+			"key": "subTaskId3",
+			"value": ""
+		},
+		{
+			"key": "pendingNames",
+			"value": ""
+		},
+		{
+			"key": "taskId_6. Types",
+			"value": ""
+		},
+		{
+			"key": "taskId_Last: Execution Completed",
+			"value": ""
+		},
+		{
+			"key": "excludeFromTaskCheckTest",
+			"value": ""
+		}
+	]
+}
