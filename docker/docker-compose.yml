@@ -2,9 +2,10 @@ version: '3.9'
 
 services:
   enable-registry:
-    build:
-      context: ../enable-registry/project
-      dockerfile: ../docker/Dockerfile
+    image: liamvaessen/enable-registry:development
+    # build:
+    #   context: ../enable-registry/project
+    #   dockerfile: ../docker/Dockerfile
     container_name: enable-registry
     expose:
       - "8761"
@@ -82,9 +83,10 @@ services:
       RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
 
   enable-gateway:
-    build:
-      context: ../enable-gateway/project
-      dockerfile: ../docker/Dockerfile
+    image: liamvaessen/enable-gateway:development
+    # build:
+    #   context: ../enable-gateway/project
+    #   dockerfile: ../docker/Dockerfile
     container_name: enable-gateway
     ports:
       - "127.0.0.1:8080:8760"
