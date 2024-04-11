@@ -1,0 +1,101 @@
+version: '3.9'
+
+services:
+  enable-registry:
+    build:
+      context: ../enable-registry/project
+      dockerfile: ../docker/Dockerfile
+    container_name: enable-registry
+    expose:
+      - "8761"
+    environment:
+      spring.profiles.active: 'prod'
+  
+  enable-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'enable-rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER:-guest}'
+      RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASS:-guest}'
+
+  enable-database-execution:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: enable-database-execution
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: '${DB_ROOT_PASSWORD:-Secret1234}'
+    expose:
+      - "1433"
+    volumes:
+      - db-data-execution:/var/opt/mssql
+
+  enable-service-api-execution:
+    image: liamvaessen/enable-service-engine:development
+    # build:
+    #   context: ../enable-service-api-execution/project/enable-service-api-execution
+    #   dockerfile: ../../docker/Dockerfile
+    container_name: enable-service-api-execution
+    restart: unless-stopped
+    expose:
+      - "8080"
+    depends_on:
+      - enable-database-execution
+      - enable-rabbitmq
+      - enable-registry
+    environment:
+      ConnectionStrings__DefaultConnection: 'Server=enable-database-execution;Database=execution-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
+      RABBITMQ_HOST: 'enable-rabbitmq'
+      RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
+      RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
+      EUREKA__CLIENT__SERVICEURL: 'http://enable-registry:8761/eureka'
+
+  enable-database-engine:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: enable-database-engine
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: '${DB_ROOT_PASSWORD:-Secret1234}'
+    expose:
+      - "1433"
+    volumes:
+      - db-data-engine:/var/opt/mssql
+
+  enable-service-engine:
+    image: liamvaessen/enable-service-engine:development
+    # build:
+    #   context: ../enable-service-engine/project/enable-service-engine
+    #   dockerfile: ../../docker/Dockerfile
+    container_name: enable-service-engine
+    restart: unless-stopped
+    depends_on:
+      - enable-database-engine
+      - enable-rabbitmq
+    environment:
+      ConnectionStrings__DefaultConnection: 'Server=enable-database-engine;Database=engine-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
+      RABBITMQ_HOST: 'enable-rabbitmq'
+      RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
+      RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
+
+  enable-gateway:
+    build:
+      context: ../enable-gateway/project
+      dockerfile: ../docker/Dockerfile
+    container_name: enable-gateway
+    ports:
+      - "127.0.0.1:8080:8760"
+    depends_on:
+      - enable-registry
+      - enable-service-api-execution
+      - enable-service-engine
+    environment:
+      spring.profiles.active: 'prod'
+      EUREKA_SERVER: 'http://enable-registry:8761/eureka'
+
+volumes:
+  db-data-execution:
+  db-data-engine:
