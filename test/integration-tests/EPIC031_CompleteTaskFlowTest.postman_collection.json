@@ -1599,7 +1599,7 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					"setTimeout(function() {}, 2000);",
+					"setTimeout(function() {}, 5000);",
 					"",
 					"if (!pm.collectionVariables.get('excludeFromTaskCheckTest')) {",
 					"    checkTasks();",
