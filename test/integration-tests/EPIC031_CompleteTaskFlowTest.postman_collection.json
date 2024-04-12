@@ -1599,6 +1599,12 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
+					"setTimeout(function() {}, 2000);",
+					"",
+					"if (!pm.collectionVariables.get('excludeFromTaskCheckTest')) {",
+					"    checkTasks();",
+					"}",
+					"",
 					"function assertTasksWithNamesExistInTasksWithStatus(tasks, taskStatus, names) {",
 					"    var tasksWithStatusNames = [];",
 					"",
@@ -1645,12 +1651,6 @@
 					"        assertTasksWithNamesExistInTasksWithStatus(tasks, 4, JSON.parse(pm.collectionVariables.get('terminatedNames')));",
 					"        });",
 					"    });",
-					"}",
-					"",
-					"if (!pm.collectionVariables.get('excludeFromTaskCheckTest')) {",
-					"    setTimeout(function() {",
-					"        checkTasks();",
-					"    }, 2000);",
 					"}"
 				]
 			}
