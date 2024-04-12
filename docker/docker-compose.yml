@@ -35,7 +35,7 @@ services:
       - db-data-execution:/var/opt/mssql
 
   enable-service-api-execution:
-    image: liamvaessen/enable-service-engine:development
+    image: liamvaessen/enable-service-api-execution:development
     # build:
     #   context: ../enable-service-api-execution/project/enable-service-api-execution
     #   dockerfile: ../../docker/Dockerfile
