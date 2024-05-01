@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enable-rabbitmq-deployment
+  namespace: enable
+  labels:
+    app: enable-rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: enable-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: enable-rabbitmq
+    spec:
+      containers:
+      - name: enable-rabbitmq
+        image: rabbitmq:latest
+        ports:
+        - containerPort: 5672
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: enable-rabbitmq-secret
+              key: username
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: enable-rabbitmq-secret
+              key: password
+        
+        
+
+      
+
+ 
+
