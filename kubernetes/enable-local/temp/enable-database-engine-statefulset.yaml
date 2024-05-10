@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: enable-database-engine-statefulset
+  namespace: enable
+spec:
+  serviceName: "enable-database-engine"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: enable-database-engine
+  template:
+    metadata:
+      labels:
+        app: enable-database-engine
+    spec:
+      containers:
+      - name: enable-database-engine
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: SA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: enable-database-engine-secret
+              key: password
+        ports:
+        - containerPort: 1433
+        volumeMounts:
+        - name: enable-database-engine-data
+          mountPath: /var/opt/mssql
+  volumeClaimTemplates:
+  - metadata:
+      name: enable-database-engine-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
