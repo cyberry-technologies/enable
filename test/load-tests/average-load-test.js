@@ -374,21 +374,31 @@ import { sleep, check } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '5s', target: 10 }, // traffic ramp-up from 1 to 100 users over 5 minutes.
-    { duration: '10s', target: 10 }, // stay at 100 users for 30 minutes
-    { duration: '5s', target: 0 }, // ramp-down to 0 users
+    { duration: '1m', target: 1000 }, // traffic ramp-up from 1 to 10 users over 5 minutes.
+    { duration: '1m', target: 1000 }, // stay at 100 users for 30 minutes
+    { duration: '1m', target: 0 }, // ramp-down to 0 users
   ],
 };
 
+function generateGUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 export default function () {
-  console.log('Starting the test script execution');
+    // Step 1: Generate a new GUID
+    const userId = generateGUID();
+
+  console.log('Starting the test script execution with userId: ' + userId);
 
   // Step 2: Sleep for 10 seconds
-  console.log('Sleeping for 10 seconds before sending POST request...');
-  sleep(1);
+  console.log('Sleeping for 5 seconds before sending POST request...');
+  sleep(5);
 
   // Step 3: Send POST request
-  const postUrl = 'http://gateway.cyberrytechnologies.nl/execution/execute/new/processFile?userId=872d0dd4-6340-40de-91ab-ac487e3cb80c';
+  const postUrl = 'http://gateway.cyberrytechnologies.nl/execution/execute/new/processFile?userId=' + userId;
   const postRes = http.post(postUrl, JSON.stringify(jsonData), { headers: { 'Content-Type': 'application/json' } });
   check(postRes, {
     'POST request succeeded': (r) => r.status === 204,
@@ -396,61 +406,67 @@ export default function () {
   console.log(`POST request status: ${postRes.status}`);
 
   // Step 4: Sleep for 10 seconds
-  console.log('Sleeping for 10 seconds after POST request...');
-  sleep(1);
+  console.log('Sleeping for 5 seconds after POST request...');
+  sleep(5);
 
   // Step 5: Send GET request
-  const getUrl = 'http://gateway.cyberrytechnologies.nl/execution/get/userId?userId=872d0dd4-6340-40de-91ab-ac487e3cb80c';
+  const getUrl = 'http://gateway.cyberrytechnologies.nl/execution/get/userId?userId=' + userId;
   const getRes = http.get(getUrl);
   check(getRes, {
     'GET request succeeded': (r) => r.status === 200,
   });
   console.log(`GET request status: ${getRes.status}`);
-  console.log(`GET request response: ${getRes.body}`);
 
   let getResBody;
   try {
     getResBody = JSON.parse(getRes.body);
-    console.log(`Parsed GET request response body: ${getRes.body}`);
   } catch (e) {
     console.error('Failed to parse JSON response:', e);
     console.error('Response body:', getRes.body);
     return;
   }
 
-  const executionId = getResBody.id;
-  const mainTaskId = getResBody.mainTaskId;
-  console.log(`GET request response: executionId=${executionId}, mainTaskId=${mainTaskId}`);
+  if (getResBody.length > 0) {
+    if (getResBody[0].id != null && getResBody[0].mainTaskId != null) {
+        const executionId = getResBody[0].id;
+        const mainTaskId = getResBody[0].mainTaskId;
+        console.log(`GET request response: executionId=${executionId}, mainTaskId=${mainTaskId}`);
 
-  // Step 6: Sleep for 10 seconds
-  console.log('Sleeping for 10 seconds after GET request...');
-  sleep(1);
+        // Step 6: Sleep for 10 seconds
+        console.log('Sleeping for 5 seconds after GET request...');
+        sleep(5);
 
-  // Step 7: Send PUT request
-  const putUrl = `http://gateway.cyberrytechnologies.nl/task/complete?taskId=${mainTaskId}&userId=872d0dd4-6340-40de-91ab-ac487e3cb80c`;
-  const putRes = http.put(putUrl);
-  check(putRes, {
-    'PUT request succeeded': (r) => r.status === 200,
-  });
-  console.log(`PUT request status: ${putRes.status}`);
-  console.log(`PUT request response: ${putRes.body}`);
+        // Step 7: Send PUT request
+        const putUrl = `http://gateway.cyberrytechnologies.nl/task/complete?taskId=${mainTaskId}&userId=${userId}`;
+        const putRes = http.put(putUrl);
+        check(putRes, {
+            'PUT request succeeded': (r) => r.status === 200,
+        });
+        console.log(`PUT request status: ${putRes.status}`);
 
-  // Step 8: Sleep for 10 seconds
-  console.log('Sleeping for 10 seconds after PUT request...');
-  sleep(1);
+        // Step 8: Sleep for 10 seconds
+        console.log('Sleeping for 5 seconds after PUT request...');
+        sleep(5);
 
-  // Step 9: Send DELETE request
-  const deleteUrl = `http://gateway.cyberrytechnologies.nl/execution/delete?executionId=${executionId}`;
-  const delRes = http.del(deleteUrl);
-  check(delRes, {
-    'DELETE request succeeded': (r) => r.status === 200,
-  });
-  console.log(`DELETE request status: ${delRes.status}`);
-  console.log(`DELETE request response: ${delRes.body}`);
+        // Step 9: Send DELETE request
+        const deleteUrl = `http://gateway.cyberrytechnologies.nl/execution/delete?executionId=${executionId}`;
+        const delRes = http.del(deleteUrl);
+        check(delRes, {
+            'DELETE request succeeded': (r) => r.status === 200,
+        });
+        console.log(`DELETE request status: ${delRes.status}`);
 
-  // Step 10: Sleep for 10 seconds
-  console.log('Sleeping for 10 seconds after DELETE request...');
-  sleep(1);
+        // Step 10: Sleep for 10 seconds
+        console.log('Sleeping for 5 seconds after DELETE request...');
+        sleep(5);
+    }
+    else {
+        console.log('GET request response executionId or mainTaskId is empty');
+    }
+  }
+  else {
+    console.log('GET request response is empty');
+  }
 
   console.log('Test script execution completed');
 }
