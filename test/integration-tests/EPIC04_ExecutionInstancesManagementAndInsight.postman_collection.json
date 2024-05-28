@@ -16,8 +16,7 @@
 							"pm.test(\"Execution and mainTask correctly added\", () => {",
 							"    pm.response.to.have.status(204);",
 							"})",
-							"",
-							"setTimeout(function() {}, 1000);"
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -272,9 +271,7 @@
 						"exec": [
 							"pm.test(\"Execution and mainTask correctly added\", () => {",
 							"    pm.response.to.have.status(204);",
-							"})",
-							"",
-							"setTimeout(function() {}, 1000);"
+							"})"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -432,9 +429,7 @@
 						"exec": [
 							"pm.test(\"Execution and mainTask correctly added\", () => {",
 							"    pm.response.to.have.status(204);",
-							"})",
-							"",
-							"setTimeout(function() {}, 1000);"
+							"})"
 						],
 						"type": "text/javascript",
 						"packages": {}
