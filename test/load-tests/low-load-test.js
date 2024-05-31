@@ -376,12 +376,6 @@ export const options = {
   stages: [
     { duration: '10s', target: 1 },
     { duration: '1m', target: 100 },
-    { duration: '5m', target: 500 },
-    { duration: '5m', target: 1000 },
-    { duration: '5m', target: 500 },
-    { duration: '1m', target: 5000 },
-    { duration: '1m', target: 500 },
-    { duration: '5m', target: 500 },
     { duration: '30s', target: 1 },
   ],
 };
@@ -396,7 +390,6 @@ function generateGUID() {
 export default function () {
     const userId = generateGUID();
 
-    //Send one post request to start the execution
   const postUrl = 'http://gateway.cyberrytechnologies.nl/execution/execute/new/processFile?userId=' + userId;
   const postRes = http.post(postUrl, JSON.stringify(jsonData), { headers: { 'Content-Type': 'application/json' } });
   check(postRes, {
@@ -406,62 +399,54 @@ export default function () {
 
   sleep(15);
 
-  //Send one get request per second until body list length is greater than 0
-let executionId = 0;
-let mainTaskId = 0;
+  const getUrl = 'http://gateway.cyberrytechnologies.nl/execution/get/userId?userId=' + userId;
+  const getRes = http.get(getUrl);
+  check(getRes, {
+    'GET request succeeded': (r) => r.status === 200,
+  });
+  console.log(`GET request status: ${getRes.status}`);
 
-  while (true) {
-    const getUrl = 'http://gateway.cyberrytechnologies.nl/execution/get/userId?userId=' + userId;
-    const getRes = http.get(getUrl);
-    check(getRes, {
-      'GET request succeeded': (r) => r.status === 200,
-    });
-    console.log(`GET request status: ${getRes.status}`);
-
-    let getResBody;
-    try {
-      getResBody = JSON.parse(getRes.body);
-    } catch (e) {
-      console.error('Failed to parse JSON response:', e);
-      console.error('Response body:', getRes.body);
-      return;
-    }
-
-    if (getResBody != null && getResBody.length > 0) {
-      if (getResBody[0].id != null && getResBody[0].mainTaskId != null) {
-        console.log('Execution started successfully');
-        executionId = getResBody[0].id;
-        mainTaskId = getResBody[0].mainTaskId;
-        break;
-      }
-    }
-
-    console.log('Waiting for execution to start');
-
-    sleep(2);
+  let getResBody;
+  try {
+    getResBody = JSON.parse(getRes.body);
+  } catch (e) {
+    console.error('Failed to parse JSON response:', e);
+    console.error('Response body:', getRes.body);
+    return;
   }
 
-sleep(15);
+  if (getResBody != null && getResBody.length > 0) {
+    if (getResBody[0].id != null && getResBody[0].mainTaskId != null) {
+        const executionId = getResBody[0].id;
+        const mainTaskId = getResBody[0].mainTaskId;
 
-//Send one put request to complete the main task of execution and all its subtasks
-const putUrl = `http://gateway.cyberrytechnologies.nl/task/complete?taskId=${mainTaskId}&userId=${userId}`;
-const putRes = http.put(putUrl);
-check(putRes, {
-    'PUT request succeeded': (r) => r.status === 200,
-});
-console.log(`PUT request status: ${putRes.status}`);
+        sleep(15);
 
-sleep(15);
+        const putUrl = `http://gateway.cyberrytechnologies.nl/task/complete?taskId=${mainTaskId}&userId=${userId}`;
+        const putRes = http.put(putUrl);
+        check(putRes, {
+            'PUT request succeeded': (r) => r.status === 200,
+        });
+        console.log(`PUT request status: ${putRes.status}`);
 
-//Send one delete request to delete the execution
-const deleteUrl = `http://gateway.cyberrytechnologies.nl/execution/delete?executionId=${executionId}`;
-const delRes = http.del(deleteUrl);
-check(delRes, {
-    'DELETE request succeeded': (r) => r.status === 200,
-});
-console.log(`DELETE request status: ${delRes.status}`);
+        sleep(15);
 
+        const deleteUrl = `http://gateway.cyberrytechnologies.nl/execution/delete?executionId=${executionId}`;
+        const delRes = http.del(deleteUrl);
+        check(delRes, {
+            'DELETE request succeeded': (r) => r.status === 200,
+        });
+        console.log(`DELETE request status: ${delRes.status}`);
 
-console.log('Test script execution completed');
-sleep(15);
+        sleep(15);
+    }
+    else {
+        console.log('GET request response executionId or mainTaskId is empty');
+    }
+  }
+  else {
+    console.log('GET request response is empty');
+  }
+
+  console.log('Test script execution completed');
 }
