@@ -1,0 +1,599 @@
+{
+	"info": {
+		"_postman_id": "85c95426-ff7c-4542-8387-f769427aab81",
+		"name": "EPIC01_UserAuthenticationAndAuthorization",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17538466"
+	},
+	"item": [
+		{
+			"name": "Unauthorised request",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct error code\", () => {\r",
+							"    pm.response.to.have.status(401);\r",
+							"})\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId=0",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"execution",
+						"get",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "0"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "register",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Sign up success\", () => {\r",
+							"    pm.response.to.have.status(201);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"{{userUsername}}\",\n    \"email\": \"{{userEmail}}\",\n    \"passwordEncrypted\": \"{{userPassword}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/auth/register",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login - username",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Sign in success\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    pm.environment.set('jwt', pm.response.json().token);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"{{userUsername}}\",\n    \"passwordEncrypted\": \"{{userPassword}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/auth/login",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login - email",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Sign in success\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    pm.environment.set('jwt', pm.response.json().token);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"passwordEncrypted\": \"{{userPassword}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/auth/login",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCurrentUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    var responseBody = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseBody).to.have.property('id');\r",
+							"    pm.expect(responseBody.id).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('username');\r",
+							"    pm.expect(responseBody.username).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('email');\r",
+							"    pm.expect(responseBody.email).to.not.be.null;\r",
+							"\r",
+							"    pm.environment.set('userId', responseBody.id);\r",
+							"    pm.environment.set('userUsername', responseBody.username);\r",
+							"    pm.environment.set('userEmail', responseBody.email);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/auth/get",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"auth",
+						"get"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getUserById",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    var responseBody = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseBody).to.have.property('id');\r",
+							"    pm.expect(responseBody.id).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('username');\r",
+							"    pm.expect(responseBody.username).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('email');\r",
+							"    pm.expect(responseBody.email).to.not.be.null;\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/user/get/userId?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"user",
+						"get",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getUserById - differentUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(401);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/user/get/userId?userId=3f8b0c0a-80c6-4f40-855f-e8a1b2cd7d63",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"user",
+						"get",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "3f8b0c0a-80c6-4f40-855f-e8a1b2cd7d63"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getUserByUsername",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    var responseBody = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseBody).to.have.property('id');\r",
+							"    pm.expect(responseBody.id).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('username');\r",
+							"    pm.expect(responseBody.username).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('email');\r",
+							"    pm.expect(responseBody.email).to.not.be.null;\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/user/get/username?username={{userUsername}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"user",
+						"get",
+						"username"
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "{{userUsername}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getUserByEmail",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    var responseBody = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseBody).to.have.property('id');\r",
+							"    pm.expect(responseBody.id).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('username');\r",
+							"    pm.expect(responseBody.username).to.not.be.null;\r",
+							"    pm.expect(responseBody).to.have.property('email');\r",
+							"    pm.expect(responseBody.email).to.not.be.null;\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/user/get/email?email={{userEmail}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"user",
+						"get",
+						"email"
+					],
+					"query": [
+						{
+							"key": "email",
+							"value": "{{userEmail}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "deleteUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/user/delete/userId?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"user",
+						"delete",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCurrentUser - check",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(500);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/auth/get",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"auth",
+						"get"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

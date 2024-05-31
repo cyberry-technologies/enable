@@ -49,6 +49,9 @@ services:
       - enable-registry
     environment:
       ConnectionStrings__DefaultConnection: 'Server=enable-database-execution;Database=execution-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
+      Jwt__Key: 'MOp0d5xzAQSn6RS3WjoonoHozoaCXamDhsxgtxkwoyFCtp3WzWd0MsKc5dewNrrRA5km22hPhxOXFRSDA9y81rJH9HiObReKxnxqgu2hMcvUGCAWBWUv9yMCRlXTLdGPeqWyRSLkGLdQnI6yZl1mMNA5wl6KwYxLJH6mwdUV8OdovXOkuuwPlcFKuMLc6MoGDTf9PpS4mCcEJ7hlR8Ua3SQEh8SSn0pOMifkbDXQrQj0g1qSLaHwrqGtv1bnU9M8VQKpkBWh4J8gWolJG4tBKdeFS1YkJv1nokFZio9ukYNkUivli4O5sNISVLj2KsfVwbfrCKJRk6QyN6z0XASFVxIGqia6eY'
+      Jwt__Issuer: 'EnableSecurityIssuer'
+      Jwt__Audience: 'EnableSecurityAudience'
       RABBITMQ_HOST: 'enable-rabbitmq'
       RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
       RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
@@ -78,6 +81,9 @@ services:
       - enable-rabbitmq
     environment:
       ConnectionStrings__DefaultConnection: 'Server=enable-database-engine;Database=engine-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
+      Jwt__Key: 'EnableTestKey'
+      Jwt__Issuer: 'EnableTestIssuer'
+      Jwt__Audience: 'EnableTestAudience'
       RABBITMQ_HOST: 'enable-rabbitmq'
       RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
       RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
