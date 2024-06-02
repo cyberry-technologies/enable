@@ -3,9 +3,6 @@ version: '3.9'
 services:
   enable-registry:
     image: liamvaessen/enable-registry:development
-    # build:
-    #   context: ../enable-registry/project
-    #   dockerfile: ../docker/Dockerfile
     container_name: enable-registry
     expose:
       - "8761"
@@ -15,9 +12,10 @@ services:
   enable-rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: 'enable-rabbitmq'
+    ports:
+      - "15672:15672"
     expose:
       - 5672
-      - 15672
     environment:
       RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER:-guest}'
       RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASS:-guest}'
@@ -36,9 +34,6 @@ services:
 
   enable-service-api-execution:
     image: liamvaessen/enable-service-api-execution:development
-    # build:
-    #   context: ../enable-service-api-execution/project/enable-service-api-execution
-    #   dockerfile: ../../docker/Dockerfile
     container_name: enable-service-api-execution
     restart: unless-stopped
     expose:
@@ -49,6 +44,38 @@ services:
       - enable-registry
     environment:
       ConnectionStrings__DefaultConnection: 'Server=enable-database-execution;Database=execution-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
+      Jwt__Key: 'MOp0d5xzAQSn6RS3WjoonoHozoaCXamDhsxgtxkwoyFCtp3WzWd0MsKc5dewNrrRA5km22hPhxOXFRSDA9y81rJH9HiObReKxnxqgu2hMcvUGCAWBWUv9yMCRlXTLdGPeqWyRSLkGLdQnI6yZl1mMNA5wl6KwYxLJH6mwdUV8OdovXOkuuwPlcFKuMLc6MoGDTf9PpS4mCcEJ7hlR8Ua3SQEh8SSn0pOMifkbDXQrQj0g1qSLaHwrqGtv1bnU9M8VQKpkBWh4J8gWolJG4tBKdeFS1YkJv1nokFZio9ukYNkUivli4O5sNISVLj2KsfVwbfrCKJRk6QyN6z0XASFVxIGqia6eY'
+      Jwt__Issuer: 'EnableSecurityIssuer'
+      Jwt__Audience: 'EnableSecurityAudience'
+      RABBITMQ_HOST: 'enable-rabbitmq'
+      RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
+      RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
+      EUREKA__CLIENT__SERVICEURL: 'http://enable-registry:8761/eureka'
+
+  enable-database-auth:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: enable-database-auth
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: '${DB_ROOT_PASSWORD:-Secret1234}'
+    expose:
+      - "1433"
+    volumes:
+      - db-data-auth:/var/opt/mssql
+
+  enable-service-api-auth:
+    image: liamvaessen/enable-service-api-auth:development
+    container_name: enable-service-api-auth
+    restart: unless-stopped
+    expose:
+      - "8080"
+    depends_on:
+      - enable-database-auth
+      - enable-rabbitmq
+      - enable-registry
+    environment:
+      ConnectionStrings__DefaultConnection: 'Server=enable-database-auth;Database=auth-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
       Jwt__Key: 'MOp0d5xzAQSn6RS3WjoonoHozoaCXamDhsxgtxkwoyFCtp3WzWd0MsKc5dewNrrRA5km22hPhxOXFRSDA9y81rJH9HiObReKxnxqgu2hMcvUGCAWBWUv9yMCRlXTLdGPeqWyRSLkGLdQnI6yZl1mMNA5wl6KwYxLJH6mwdUV8OdovXOkuuwPlcFKuMLc6MoGDTf9PpS4mCcEJ7hlR8Ua3SQEh8SSn0pOMifkbDXQrQj0g1qSLaHwrqGtv1bnU9M8VQKpkBWh4J8gWolJG4tBKdeFS1YkJv1nokFZio9ukYNkUivli4O5sNISVLj2KsfVwbfrCKJRk6QyN6z0XASFVxIGqia6eY'
       Jwt__Issuer: 'EnableSecurityIssuer'
       Jwt__Audience: 'EnableSecurityAudience'
@@ -69,37 +96,33 @@ services:
     volumes:
       - db-data-engine:/var/opt/mssql
 
-  enable-service-engine:
-    image: liamvaessen/enable-service-engine:development
-    # build:
-    #   context: ../enable-service-engine/project/enable-service-engine
-    #   dockerfile: ../../docker/Dockerfile
-    container_name: enable-service-engine
+  enable-service-api-process:
+    image: liamvaessen/enable-service-api-process:development
+    container_name: enable-service-api-process
     restart: unless-stopped
+    expose:
+      - "8080"
     depends_on:
       - enable-database-engine
       - enable-rabbitmq
+      - enable-registry
     environment:
       ConnectionStrings__DefaultConnection: 'Server=enable-database-engine;Database=engine-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
-      Jwt__Key: 'EnableTestKey'
-      Jwt__Issuer: 'EnableTestIssuer'
-      Jwt__Audience: 'EnableTestAudience'
+      Jwt__Key: 'MOp0d5xzAQSn6RS3WjoonoHozoaCXamDhsxgtxkwoyFCtp3WzWd0MsKc5dewNrrRA5km22hPhxOXFRSDA9y81rJH9HiObReKxnxqgu2hMcvUGCAWBWUv9yMCRlXTLdGPeqWyRSLkGLdQnI6yZl1mMNA5wl6KwYxLJH6mwdUV8OdovXOkuuwPlcFKuMLc6MoGDTf9PpS4mCcEJ7hlR8Ua3SQEh8SSn0pOMifkbDXQrQj0g1qSLaHwrqGtv1bnU9M8VQKpkBWh4J8gWolJG4tBKdeFS1YkJv1nokFZio9ukYNkUivli4O5sNISVLj2KsfVwbfrCKJRk6QyN6z0XASFVxIGqia6eY'
+      Jwt__Issuer: 'EnableSecurityIssuer'
+      Jwt__Audience: 'EnableSecurityAudience'
       RABBITMQ_HOST: 'enable-rabbitmq'
       RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
       RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
+      EUREKA__CLIENT__SERVICEURL: 'http://enable-registry:8761/eureka'
 
   enable-gateway:
     image: liamvaessen/enable-gateway:development
-    # build:
-    #   context: ../enable-gateway/project
-    #   dockerfile: ../docker/Dockerfile
     container_name: enable-gateway
     ports:
       - "127.0.0.1:8080:8760"
     depends_on:
       - enable-registry
-      - enable-service-api-execution
-      - enable-service-engine
     environment:
       spring.profiles.active: 'prod'
       EUREKA_SERVER: 'http://enable-registry:8761/eureka'
@@ -128,4 +151,5 @@ services:
 
 volumes:
   db-data-execution:
+  db-data-auth:
   db-data-engine:
