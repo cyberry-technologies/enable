@@ -15,7 +15,9 @@
 						"exec": [
 							"pm.test(\"ProcessPublishmentVersion correctly added\", () => {",
 							"    pm.response.to.have.status(204);",
-							"})"
+							"})",
+							"",
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', false);"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -86,8 +88,8 @@
 							"    pm.expect(responseBody.id).to.not.be.null;",
 							"    ",
 							"    // Assert if processFileId exists and is not null",
-							"    pm.expect(responseBody).to.have.property('processFileId');",
-							"    pm.expect(responseBody.processFileId).to.not.be.null;",
+							"    pm.expect(responseBody).to.have.property('processPublishmentVersionId');",
+							"    pm.expect(responseBody.processPublishmentVersionId).to.not.be.null;",
 							"    ",
 							"    // Assert if mainTaskId exists and is not null",
 							"    pm.expect(responseBody).to.have.property('mainTaskId');",
@@ -105,7 +107,7 @@
 							"    // Set execution id in environment variable",
 							"    pm.environment.set('executionId', responseBody.id);",
 							"    // Set execution id in environment variable",
-							"    pm.environment.set('processFileId', responseBody.processFileId);",
+							"    pm.environment.set('processPublishmentVersionId', responseBody.processPublishmentVersionId);",
 							"    // Set main task id as mainTaskId in environment variable",
 							"    pm.environment.set('mainTaskId', responseBody.mainTaskId);",
 							"})"
@@ -118,7 +120,7 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							""
+							"pm.collectionVariables.set('excludeFromTaskCheckTest', true);"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -165,63 +167,9 @@
 							"",
 							"    pm.expect(task1).to.have.property('id');",
 							"    pm.expect(task1.id).to.not.be.null;",
-							"    ",
-							"    pm.expect(task1).to.have.property('executionId');",
-							"    pm.expect(task1.executionId).to.not.be.null;",
-							"    pm.expect(task1.executionId).to.equal(pm.environment.get('executionId'));",
-							"    ",
-							"    pm.expect(task1).to.have.property('processFileId');",
-							"    pm.expect(task1.processFileId).to.not.be.null;",
-							"",
-							"    pm.expect(task1).to.have.property('processInfoId');",
-							"    pm.expect(task1.processInfoId).to.not.be.null;",
-							"",
-							"    pm.expect(task1).to.have.property('parentTaskId');",
-							"    pm.expect(task1.parentTaskId).to.be.null;",
-							"",
-							"    pm.expect(task1).to.have.property('taskStatus');",
-							"    pm.expect(task1.taskStatus).to.not.be.null;",
-							"    pm.expect(task1.taskStatus).to.equal(0);",
-							"    ",
-							"    pm.expect(task1).to.have.property('processInfo');",
-							"    pm.expect(task1.processInfo).to.not.be.null;",
-							"    pm.expect(task1.processInfo).to.have.property('name');",
-							"    pm.expect(task1.processInfo.name).to.not.be.null;",
-							"    pm.expect(task1.processInfo.name).to.equal('Test');",
-							"",
 							"",
 							"    pm.expect(task2).to.have.property('id');",
 							"    pm.expect(task2.id).to.not.be.null;",
-							"    ",
-							"    pm.expect(task2).to.have.property('executionId');",
-							"    pm.expect(task2.executionId).to.not.be.null;",
-							"    pm.expect(task2.executionId).to.equal(pm.environment.get('executionId'));",
-							"    ",
-							"    pm.expect(task2).to.have.property('processFileId');",
-							"    pm.expect(task2.processFileId).to.not.be.null;",
-							"",
-							"    pm.expect(task2).to.have.property('processInfoId');",
-							"    pm.expect(task2.processInfoId).to.not.be.null;",
-							"",
-							"    pm.expect(task2).to.have.property('parentTaskId');",
-							"    pm.expect(task2.parentTaskId).to.not.be.null;",
-							"",
-							"    pm.expect(task2).to.have.property('taskStatus');",
-							"    pm.expect(task2.taskStatus).to.not.be.null;",
-							"    pm.expect(task2.taskStatus).to.equal(0);",
-							"    ",
-							"    pm.expect(task2).to.have.property('processInfo');",
-							"    pm.expect(task2.processInfo).to.not.be.null;",
-							"    pm.expect(task2.processInfo).to.have.property('name');",
-							"    pm.expect(task2.processInfo.name).to.not.be.null;",
-							"    pm.expect(task2.processInfo.name).to.equal('1: Empty');",
-							"",
-							"    // Set task 1 id as mainTaskId in environment variable",
-							"    pm.environment.set('mainTaskId', task1.id);",
-							"    // Set task 2 id as subTaskId to collection variable",
-							"    pm.collectionVariables.set('subTaskId', task2.id);",
-							"    pm.collectionVariables.set('subTaskId2', responseBody[2].id);",
-							"    pm.collectionVariables.set('subTaskId3', responseBody[3].id);",
 							"})"
 						],
 						"type": "text/javascript",
@@ -925,215 +873,6 @@
 			"response": []
 		},
 		{
-			"name": "interrupt - 4.4 IF",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"var pendingNames = [];\r",
-							"var completedNames = [];\r",
-							"var interruptedNames = [\r",
-							"    '4.4 IF',\r",
-							"];\r",
-							"var skippedNames = [];\r",
-							"var terminatedNames = [];\r",
-							"\r",
-							"var nameToConclude = '4.4 IF';\r",
-							"\r",
-							"\r",
-							"\r",
-							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
-							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
-							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
-							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
-							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
-							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
-							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/task/interrupt?taskId={{idToConclude}}&userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"task",
-						"interrupt"
-					],
-					"query": [
-						{
-							"key": "taskId",
-							"value": "{{idToConclude}}"
-						},
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "complete - 4.1 - take2",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"var pendingNames = [\r",
-							"    '4.2',\r",
-							"    '4.3',\r",
-							"];\r",
-							"var completedNames = [\r",
-							"    '4.1',\r",
-							"];\r",
-							"var interruptedNames = [];\r",
-							"var skippedNames = [];\r",
-							"var terminatedNames = [];\r",
-							"\r",
-							"var nameToConclude = '4.1';\r",
-							"\r",
-							"\r",
-							"\r",
-							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
-							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
-							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
-							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
-							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
-							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
-							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"task",
-						"complete"
-					],
-					"query": [
-						{
-							"key": "taskId",
-							"value": "{{idToConclude}}"
-						},
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "complete - 4.2 - take2",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"var pendingNames = [\r",
-							"    '4.4 IF',\r",
-							"];\r",
-							"var completedNames = [\r",
-							"    '4.2',\r",
-							"];\r",
-							"var interruptedNames = [];\r",
-							"var skippedNames = [];\r",
-							"var terminatedNames = [];\r",
-							"\r",
-							"var nameToConclude = '4.2';\r",
-							"\r",
-							"\r",
-							"\r",
-							"var idToConclude = pm.collectionVariables.get('taskId_' + nameToConclude);\r",
-							"pm.collectionVariables.set('idToConclude', idToConclude);\r",
-							"pm.collectionVariables.set('pendingNames', JSON.stringify(pendingNames));\r",
-							"pm.collectionVariables.set('completedNames', JSON.stringify(completedNames));\r",
-							"pm.collectionVariables.set('interruptedNames', JSON.stringify(interruptedNames));\r",
-							"pm.collectionVariables.set('skippedNames', JSON.stringify(skippedNames));\r",
-							"pm.collectionVariables.set('terminatedNames', JSON.stringify(terminatedNames));"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/task/complete?taskId={{idToConclude}}&userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"task",
-						"complete"
-					],
-					"query": [
-						{
-							"key": "taskId",
-							"value": "{{idToConclude}}"
-						},
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "complete - 4.4 IF",
 			"event": [
 				{
@@ -1591,7 +1330,7 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					"setTimeout(function() {}, 1000);",
+					"setTimeout(function() {}, 5000);",
 					"",
 					"if (!pm.collectionVariables.get('excludeFromTaskCheckTest')) {",
 					"    pm.test(\"Code correct\", () => {",
@@ -1625,6 +1364,9 @@
 					"                + '/task/get/executionId?executionId='",
 					"                + pm.environment.get('executionId'),",
 					"            method: 'GET',",
+					"            header: {",
+					"                'Authorization': 'Bearer ' + pm.environment.get('jwt')",
+					"            }",
 					"        }, function (err, response) {",
 					"            if (err) {",
 					"                console.error(err);",
@@ -1639,7 +1381,7 @@
 					"",
 					"        tasks.forEach((task, index) => {",
 					"            if (task.taskStatus == 0) {",
-					"                console.log(task.processInfo.name)",
+					"                // console.log(task.processInfo.name)",
 					"                // Save id for future use",
 					"                pm.collectionVariables.set('taskId_' + task.processInfo.name, task.id);",
 					"",

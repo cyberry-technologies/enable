@@ -30,12 +30,12 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId=0",
+					"raw": "{{apiGatewayBaseUrl}}/user/get/userId?userId=0",
 					"host": [
 						"{{apiGatewayBaseUrl}}"
 					],
 					"path": [
-						"execution",
+						"user",
 						"get",
 						"userId"
 					],
@@ -57,7 +57,7 @@
 					"script": {
 						"exec": [
 							"pm.test(\"Sign up success\", () => {\r",
-							"    pm.response.to.have.status(201);\r",
+							"    pm.response.to.have.status(200);\r",
 							"})"
 						],
 						"type": "text/javascript",

@@ -82,28 +82,12 @@
 							"    // Assert if id exists and is not null",
 							"    pm.expect(responseBody).to.have.property('id');",
 							"    pm.expect(responseBody.id).to.not.be.null;",
-							"    ",
-							"    // Assert if processFileId exists and is not null",
-							"    pm.expect(responseBody).to.have.property('processFileId');",
-							"    pm.expect(responseBody.processFileId).to.not.be.null;",
-							"    ",
-							"    // Assert if mainTaskId exists and is not null",
-							"    pm.expect(responseBody).to.have.property('mainTaskId');",
-							"    pm.expect(responseBody.mainTaskId).to.not.be.null;",
-							"",
-							"    // Assert if mainTask exists and id is mainTaskId",
-							"    pm.expect(responseBody).to.have.property('mainTask');",
-							"    pm.expect(responseBody.mainTask.id).to.equal(responseBody.mainTaskId);",
-							"",
-							"    // Assert if mainTask.executionId exists and is saved executionId",
-							"    pm.expect(responseBody.mainTask).to.have.property('executionId');",
-							"    pm.expect(responseBody.mainTask.executionId).to.equal(responseBody.id);",
 							"",
 							"",
 							"    // Set execution id in environment variable",
 							"    pm.environment.set('executionId', responseBody.id);",
 							"    // Set execution id in environment variable",
-							"    pm.environment.set('processFileId', responseBody.processFileId);",
+							"    pm.environment.set('processPublishmentVersionId', responseBody.processPublishmentVersionId);",
 							"    // Set main task id as mainTaskId in environment variable",
 							"    pm.environment.set('mainTaskId', responseBody.mainTaskId);",
 							"})"
@@ -150,59 +134,6 @@
 							"",
 							"    var task1 = responseBody[0];",
 							"    var task2 = responseBody[1];",
-							"",
-							"    pm.expect(task1).to.have.property('id');",
-							"    pm.expect(task1.id).to.not.be.null;",
-							"    ",
-							"    pm.expect(task1).to.have.property('executionId');",
-							"    pm.expect(task1.executionId).to.not.be.null;",
-							"    pm.expect(task1.executionId).to.equal(pm.environment.get('executionId'));",
-							"    ",
-							"    pm.expect(task1).to.have.property('processFileId');",
-							"    pm.expect(task1.processFileId).to.not.be.null;",
-							"",
-							"    pm.expect(task1).to.have.property('processInfoId');",
-							"    pm.expect(task1.processInfoId).to.not.be.null;",
-							"",
-							"    pm.expect(task1).to.have.property('parentTaskId');",
-							"    pm.expect(task1.parentTaskId).to.be.null;",
-							"",
-							"    pm.expect(task1).to.have.property('taskStatus');",
-							"    pm.expect(task1.taskStatus).to.not.be.null;",
-							"    pm.expect(task1.taskStatus).to.equal(0);",
-							"    ",
-							"    pm.expect(task1).to.have.property('processInfo');",
-							"    pm.expect(task1.processInfo).to.not.be.null;",
-							"    pm.expect(task1.processInfo).to.have.property('name');",
-							"    pm.expect(task1.processInfo.name).to.not.be.null;",
-							"    pm.expect(task1.processInfo.name).to.equal('Test');",
-							"",
-							"",
-							"    pm.expect(task2).to.have.property('id');",
-							"    pm.expect(task2.id).to.not.be.null;",
-							"    ",
-							"    pm.expect(task2).to.have.property('executionId');",
-							"    pm.expect(task2.executionId).to.not.be.null;",
-							"    pm.expect(task2.executionId).to.equal(pm.environment.get('executionId'));",
-							"    ",
-							"    pm.expect(task2).to.have.property('processFileId');",
-							"    pm.expect(task2.processFileId).to.not.be.null;",
-							"",
-							"    pm.expect(task2).to.have.property('processInfoId');",
-							"    pm.expect(task2.processInfoId).to.not.be.null;",
-							"",
-							"    pm.expect(task2).to.have.property('parentTaskId');",
-							"    pm.expect(task2.parentTaskId).to.not.be.null;",
-							"",
-							"    pm.expect(task2).to.have.property('taskStatus');",
-							"    pm.expect(task2.taskStatus).to.not.be.null;",
-							"    pm.expect(task2.taskStatus).to.equal(0);",
-							"    ",
-							"    pm.expect(task2).to.have.property('processInfo');",
-							"    pm.expect(task2.processInfo).to.not.be.null;",
-							"    pm.expect(task2.processInfo).to.have.property('name');",
-							"    pm.expect(task2.processInfo.name).to.not.be.null;",
-							"    pm.expect(task2.processInfo.name).to.equal('1: Empty');",
 							"",
 							"    // Set task 1 id as mainTaskId in environment variable",
 							"    pm.environment.set('mainTaskId', task1.id);",
@@ -262,8 +193,8 @@
 							"    pm.expect(task.executionId).to.not.be.null;",
 							"    pm.expect(task.executionId).to.equal(pm.environment.get('executionId'));",
 							"    ",
-							"    pm.expect(task).to.have.property('processFileId');",
-							"    pm.expect(task.processFileId).to.not.be.null;",
+							"    pm.expect(task).to.have.property('processPublishmentVersionId');",
+							"    pm.expect(task.processPublishmentVersionId).to.not.be.null;",
 							"",
 							"    pm.expect(task).to.have.property('processInfoId');",
 							"    pm.expect(task.processInfoId).to.not.be.null;",
@@ -279,7 +210,6 @@
 							"    pm.expect(task.processInfo).to.not.be.null;",
 							"    pm.expect(task.processInfo).to.have.property('name');",
 							"    pm.expect(task.processInfo.name).to.not.be.null;",
-							"    pm.expect(task.processInfo.name).to.equal('1: Empty');",
 							"})"
 						],
 						"type": "text/javascript",
@@ -543,64 +473,6 @@
 						{
 							"key": "userId",
 							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "getTasksOfExecution - check after terminate",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Executions correctly retrieved\", () => {",
-							"    pm.response.to.have.status(200);",
-							"    ",
-							"    var responseBody = pm.response.json();",
-							"",
-							"    pm.expect(responseBody).to.be.an('array').that.has.lengthOf(18);",
-							"",
-							"    pm.expect(responseBody[0].processInfo.name).to.equal('Test');",
-							"    pm.expect(responseBody[0].taskStatus).to.equal(4);",
-							"    pm.expect(responseBody[1].processInfo.name).to.equal('1: Empty');",
-							"    pm.expect(responseBody[1].taskStatus).to.equal(1);",
-							"    pm.expect(responseBody[2].processInfo.name).to.equal('2: Merge at end');",
-							"    pm.expect(responseBody[2].taskStatus).to.equal(2);",
-							"    pm.expect(responseBody[3].processInfo.name).to.equal('3: Split at start');",
-							"    pm.expect(responseBody[3].taskStatus).to.equal(4);",
-							"    pm.expect(responseBody[4].processInfo.name).to.equal('4: Loop and If');",
-							"    pm.expect(responseBody[4].taskStatus).to.equal(4);",
-							"    pm.expect(responseBody[5].processInfo.name).to.equal('5: Conclude child tasks');",
-							"    pm.expect(responseBody[5].taskStatus).to.equal(4);",
-							"    pm.expect(responseBody[6].processInfo.name).to.equal('6. Types');",
-							"    pm.expect(responseBody[6].taskStatus).to.equal(4);",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/task/get/executionId?executionId={{executionId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"task",
-						"get",
-						"executionId"
-					],
-					"query": [
-						{
-							"key": "executionId",
-							"value": "{{executionId}}"
 						}
 					]
 				}

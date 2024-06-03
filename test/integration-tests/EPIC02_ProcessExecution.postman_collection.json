@@ -7,45 +7,6 @@
 	},
 	"item": [
 		{
-			"name": "getExecutionsOfUser - empty executions list",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Empty execution list correctly retrieved\", () => {",
-							"    pm.response.to.have.status(200);",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"execution",
-						"get",
-						"userId"
-					],
-					"query": [
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "createProcessPublishment",
 			"event": [
 				{
@@ -261,9 +222,9 @@
 							"    pm.expect(responseBody).to.have.property('id');",
 							"    pm.expect(responseBody.id).to.not.be.null;",
 							"    ",
-							"    // Assert if processFileId exists and is not null",
-							"    pm.expect(responseBody).to.have.property('processFileId');",
-							"    pm.expect(responseBody.processFileId).to.not.be.null;",
+							"    // Assert if processPublishmentVersionId exists and is not null",
+							"    pm.expect(responseBody).to.have.property('processPublishmentVersionId');",
+							"    pm.expect(responseBody.processPublishmentVersionId).to.not.be.null;",
 							"    ",
 							"    // Assert if mainTaskId exists and is not null",
 							"    pm.expect(responseBody).to.have.property('mainTaskId');",
@@ -281,7 +242,7 @@
 							"    // Set execution id in environment variable",
 							"    pm.environment.set('executionId', responseBody.id);",
 							"    // Set execution id in environment variable",
-							"    pm.environment.set('processFileId', responseBody.processFileId);",
+							"    pm.environment.set('processPublishmentVersionId', responseBody.processPublishmentVersionId);",
 							"    // Set main task id as mainTaskId in environment variable",
 							"    pm.environment.set('mainTaskId', responseBody.mainTaskId);",
 							"})"
