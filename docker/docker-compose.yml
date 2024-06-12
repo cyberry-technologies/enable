@@ -130,7 +130,7 @@ services:
     depends_on:
       - enable-registry
     environment:
-      SSL_ENABLED: false
+      SSL_ENABLED: 'false'
       KEY_ALIAS: ${KEY_ALIAS:-liamvaessen}
       KEY_STORE_PASSWORD: ${KEY_STORE_PASSWORD:-Liam1255}
       spring.profiles.active: 'prod'
