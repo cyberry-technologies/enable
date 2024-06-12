@@ -7,6 +7,182 @@
 	},
 	"item": [
 		{
+			"name": "login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Sign in success\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    pm.environment.set('jwt', pm.response.json().token);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"passwordEncrypted\": \"{{userPassword}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/auth/login",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getCurrentUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Correct profile\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"\r",
+							"    var responseBody = pm.response.json();\r",
+							"\r",
+							"    pm.environment.set('userId', responseBody.id);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/auth/get",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"auth",
+						"get"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getProcessPublishmentsOfUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"ProcessPublishment list correctly retrieved\", () => {",
+							"    pm.response.to.have.status(200);",
+							"    // Set processPublishment id in environment variable",
+							"    pm.environment.set('processPublishmentId', pm.response.json()[0].id);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/processPublishment/get/userId?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"processPublishment",
+						"get",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getProcessPublishmentVersionsOfProcessPublishment",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"ProcessPublishment list correctly retrieved\", () => {",
+							"    pm.response.to.have.status(200);",
+							"    // Set processPublishment id in environment variable",
+							"    pm.environment.set('processPublishmentVersionId', pm.response.json()[0].id);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/processPublishmentVersion/get/processPublishmentId?processPublishmentId={{processPublishmentId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"processPublishmentVersion",
+						"get",
+						"processPublishmentId"
+					],
+					"query": [
+						{
+							"key": "processPublishmentId",
+							"value": "{{processPublishmentId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "executeProcessPublishmentVersion",
 			"event": [
 				{
