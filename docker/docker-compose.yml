@@ -136,27 +136,27 @@ services:
       spring.profiles.active: 'prod'
       EUREKA_SERVER: 'http://enable-registry:8761/eureka'
 
-#   enable-webapp-management:
-#     image: liamvaessen/enable-webapp-management:development
-#     container_name: enable-webapp-management
-#     ports:
-#       - "127.0.0.1:80:8080"
-#     depends_on:
-#       - enable-gateway
-#     environment:
-#       VUE_APP_ENABLE_GATEWAY_URL: 'http://localhost:8080'
-#       VUE_APP_ENABLE_WEBAPP_MANAGEMENT_URL: 'http://localhost:80'
-#       VUE_APP_ENABLE_WEBAPP_DESIGN_URL: 'http://localhost:8090'
+  enable-webapp-management:
+    image: liamvaessen/enable-webapp-management:development
+    container_name: enable-webapp-management
+    ports:
+      - "127.0.0.1:80:8080"
+    depends_on:
+      - enable-gateway
+    environment:
+      VUE_APP_ENABLE_GATEWAY_URL: 'http://localhost:8080'
+      VUE_APP_ENABLE_WEBAPP_MANAGEMENT_URL: 'http://localhost:80'
+      VUE_APP_ENABLE_WEBAPP_DESIGN_URL: 'http://localhost:8090'
 
-#   enable-webapp-design:
-#     image: liamvaessen/enable-webapp-design:development
-#     container_name: enable-webapp-design
-#     ports:
-#       - "127.0.0.1:8090:8080"
-#     environment:
-#       VUE_APP_ENABLE_GATEWAY_URL: 'http://localhost:8080'
-#       VUE_APP_ENABLE_WEBAPP_MANAGEMENT_URL: 'http://localhost:80'
-#       VUE_APP_ENABLE_WEBAPP_DESIGN_URL: 'http://localhost:8090'
+  enable-webapp-design:
+    image: liamvaessen/enable-webapp-design:development
+    container_name: enable-webapp-design
+    ports:
+      - "127.0.0.1:8090:8080"
+    environment:
+      VUE_APP_ENABLE_GATEWAY_URL: 'http://localhost:8080'
+      VUE_APP_ENABLE_WEBAPP_MANAGEMENT_URL: 'http://localhost:80'
+      VUE_APP_ENABLE_WEBAPP_DESIGN_URL: 'http://localhost:8090'
 
 volumes:
   db-data-execution:
