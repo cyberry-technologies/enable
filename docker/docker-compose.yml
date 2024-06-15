@@ -127,7 +127,7 @@ services:
     image: liamvaessen/enable-gateway:development
     container_name: enable-gateway
     ports:
-      - "127.0.0.1:80:8443"
+      - "80:8443"
     depends_on:
       - enable-registry
     environment:
