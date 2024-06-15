@@ -123,7 +123,7 @@ describe('template spec', () => {
     cy.get('input#name').type('TestProcess');
 
     // Select the file input and attach a file
-    const filePath = '../../../test-data/TestProcess.json'; 
+    const filePath = './TestProcess.json'; 
     cy.get('input[type="file"]').attachFile(filePath);
 
     // Find text area with id "description" and type "TestProcess Description"
@@ -171,7 +171,7 @@ describe('template spec', () => {
     cy.get('input#name').last().type('TestExecution Version 2');
 
     // Select the file input and attach a file
-    const filePath2 = '../../../test-data/TestProcess.json'; 
+    const filePath2 = './test-data/TestProcess.json'; 
     cy.get('input[type="file"]').attachFile(filePath2);
 
     // Find the last text area with id "change-notes" and type "This is the second version and adds new features"
