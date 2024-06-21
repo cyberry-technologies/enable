@@ -25,20 +25,32 @@ jobs:
               run: |
                 kubectl apply -f ./infrastructure/kubernetes/.
 
-            - name: Create Kubernetes Secrets
+            - name: Create/ Update Kubernetes Secret
               run: |
                 kubectl delete secret enable-database-auth-secret --namespace=enable || true
                 kubectl create secret generic enable-database-auth-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_AUTH_CONNECTION_STRING }}
+            - name: Create/ Update Kubernetes Secret
+              run: |
                 kubectl delete secret enable-database-execution-secret --namespace=enable || true
                 kubectl create secret generic enable-database-execution-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_EXECUTION_CONNECTION_STRING }}
+            - name: Create/ Update Kubernetes Secret
+              run: |
                 kubectl delete secret enable-database-process-secret --namespace=enable || true
                 kubectl create secret generic enable-database-process-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_PROCESS_CONNECTION_STRING }}
+            - name: Create/ Update Kubernetes Secret
+              run: |
                 kubectl delete secret enable-gateway-secret --namespace=enable || true
                 kubectl create secret generic enable-gateway-secret --namespace=enable --from-literal=key-alias=${{ secrets.GATEWAY_KEY_ALIAS }} --from-literal=key-store-password=${{ secrets.GATEWAY_KEY_STORE_PASSWORD }}
+            - name: Create/ Update Kubernetes Secret
+              run: |
                 kubectl delete secret enable-rabbitmq-secret --namespace=enable || true
                 kubectl create secret generic enable-rabbitmq-secret --namespace=enable --from-literal=username=${{ secrets.RABBITMQ_USERNAME }} --from-literal=password=${{ secrets.RABBITMQ_PASSWORD }}
+            - name: Create/ Update Kubernetes Secret
+              run: |
                 kubectl delete secret enable-service-api-auth-secret --namespace=enable || true
                 kubectl create secret generic enable-service-api-auth-secret --namespace=enable --from-literal=jwt-key=${{ secrets.SERVICE_AUTH_JWT_KEY }} --from-literal=jwt-issuer=${{ secrets.SERVICE_AUTH_JWT_ISSUER }} --from-literal=jwt-audience=${{ secrets.SERVICE_AUTH_JWT_AUDIENCE }}
+            - name: Create/ Update Kubernetes Secret
+              run: |
                 kubectl delete secret enable-service-api-execution-secret --namespace=enable || true
                 kubectl create secret generic enable-service-encryption-secret --namespace=enable --from-literal=encryption-key=${{ secrets.SERVICE_ENCRYPTION_KEY }}
 
