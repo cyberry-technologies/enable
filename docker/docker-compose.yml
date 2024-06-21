@@ -15,8 +15,8 @@ services:
     expose:
       - 5672
     environment:
-      RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER:-guest}'
-      RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASS:-guest}'
+      RABBITMQ_DEFAULT_USER: '${RABBITMQ_USERNAME:-guest}'
+      RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASSWORD:-guest}'
 
   enable-database-execution:
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -49,8 +49,8 @@ services:
       Jwt__Audience: 'EnableSecurityAudience'
       ENCRYPTION_KEY: '256bit32characterTesterKeyString'
       RABBITMQ_HOST: 'enable-rabbitmq'
-      RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
-      RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
+      RABBITMQ_USER: '${RABBITMQ_USERNAME:-guest}'
+      RABBITMQ_PASS: '${RABBITMQ_PASSWORD:-guest}'
       EUREKA__CLIENT__SERVICEURL: 'http://enable-registry:8761/eureka'
 
   enable-database-auth:
@@ -84,13 +84,13 @@ services:
       Jwt__Audience: 'EnableSecurityAudience'
       ENCRYPTION_KEY: '256bit32characterTesterKeyString'
       RABBITMQ_HOST: 'enable-rabbitmq'
-      RABBITMQ_USER: '${RABBITMQ_USER:-guest}'
-      RABBITMQ_PASS: '${RABBITMQ_PASS:-guest}'
+      RABBITMQ_USER: '${RABBITMQ_USERNAME:-guest}'
+      RABBITMQ_PASS: '${RABBITMQ_PASSWORD:-guest}'
       EUREKA__CLIENT__SERVICEURL: 'http://enable-registry:8761/eureka'
 
-  enable-database-engine:
+  enable-database-process:
     image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: enable-database-engine
+    container_name: enable-database-process
     restart: unless-stopped
     environment:
       ACCEPT_EULA: 'Y'
@@ -100,7 +100,7 @@ services:
     expose:
       - "1433"
     volumes:
-      - db-data-engine:/var/opt/mssql
+      - db-data-process:/var/opt/mssql
 
   enable-service-api-process:
     image: liamvaessen/enable-service-api-process:development
@@ -109,11 +109,11 @@ services:
     expose:
       - "8080"
     depends_on:
-      - enable-database-engine
+      - enable-database-process
       - enable-rabbitmq
       - enable-registry
     environment:
-      ConnectionStrings__DefaultConnection: 'Server=enable-database-engine,1433;Database=engine-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
+      ConnectionStrings__DefaultConnection: 'Server=enable-database-process,1433;Database=process-database;User Id=sa;Password=${DB_ROOT_PASSWORD:-Secret1234};TrustServerCertificate=true;'
       Jwt__Key: 'MOp0d5xzAQSn6RS3WjoonoHozoaCXamDhsxgtxkwoyFCtp3WzWd0MsKc5dewNrrRA5km22hPhxOXFRSDA9y81rJH9HiObReKxnxqgu2hMcvUGCAWBWUv9yMCRlXTLdGPeqWyRSLkGLdQnI6yZl1mMNA5wl6KwYxLJH6mwdUV8OdovXOkuuwPlcFKuMLc6MoGDTf9PpS4mCcEJ7hlR8Ua3SQEh8SSn0pOMifkbDXQrQj0g1qSLaHwrqGtv1bnU9M8VQKpkBWh4J8gWolJG4tBKdeFS1YkJv1nokFZio9ukYNkUivli4O5sNISVLj2KsfVwbfrCKJRk6QyN6z0XASFVxIGqia6eY'
       Jwt__Issuer: 'EnableSecurityIssuer'
       Jwt__Audience: 'EnableSecurityAudience'
@@ -132,37 +132,22 @@ services:
       - enable-registry
     environment:
       SSL_ENABLED: 'false'
-      KEY_ALIAS: ${KEY_ALIAS:-liamvaessen}
-      KEY_STORE_PASSWORD: ${KEY_STORE_PASSWORD:-Liam1255}
+      KEY_ALIAS: ${GATEWAY_KEY_ALIAS:-liamvaessen}
+      KEY_STORE_PASSWORD: ${GATEWAY_KEY_STORE_PASSWORD:-Liam1255}
       spring.profiles.active: 'prod'
       EUREKA_SERVER: 'http://enable-registry:8761/eureka'
       WEBAPP_MANAGEMENT_URL: 'http://enable-webapp-management:80'
-      WEBAPP_DESIGN_URL: 'http://enable-webapp-design:80'
-      WEBAPP_MARKETPLACE_URL: 'http://enable-webapp-marketplace:80'
 
   enable-webapp-management:
     image: liamvaessen/enable-webapp-management:development
     container_name: enable-webapp-management
-    ports:
-      - "8081:8080"
+    expose:
+      - "80"
     environment:
+      VUE_APP_ENABLE_WEBAPP_MANAGEMENT_URL: 'http://localhost:80'
       VUE_APP_ENABLE_GATEWAY_URL: 'http://localhost:80/api'
-      VUE_APP_ENABLE_WEBAPP_MANAGEMENT_URL: 'http://localhost:8081/management'
-      VUE_APP_ENABLE_WEBAPP_DESIGN_URL: 'http://localhost:8082/design'
-      VUE_APP_ENABLE_WEBAPP_MARKETPLACE_URL: 'http://localhost:8083/marketplace'
-
-  # enable-webapp-design:
-  #   image: liamvaessen/enable-webapp-design:development
-  #   container_name: enable-webapp-design
-    # ports:
-    #   - "8082:8080"
-    # environment:
-    #   VUE_APP_ENABLE_GATEWAY_URL: 'http://localhost:80/api'
-    #   VUE_APP_ENABLE_WEBAPP_MANAGEMENT_URL: 'http://localhost:8081/management'
-    #   VUE_APP_ENABLE_WEBAPP_DESIGN_URL: 'http://localhost:8082/design'
-    #   VUE_APP_ENABLE_WEBAPP_MARKETPLACE_URL: 'http://localhost:8083/marketplace'
 
 volumes:
   db-data-execution:
   db-data-auth:
-  db-data-engine:
+  db-data-process:
