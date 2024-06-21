@@ -25,16 +25,16 @@ jobs:
               run: |
                 kubectl apply -f ./infrastructure/kubernetes/.
 
-                - name: Create/ Update Kubernetes Secret
-                run: |
-                  echo "apiVersion: v1
-                  kind: Secret
-                  metadata:
-                    name: enable-database-auth-secret
-                    namespace: enable
-                  type: Opaque
-                  stringData:
-                    connection-string: '${{ secrets.DB_AUTH_CONNECTION_STRING }}'" | kubectl apply -f -
+            - name: Create/ Update Kubernetes Secret
+              run: |
+                echo "apiVersion: v1
+                kind: Secret
+                metadata:
+                  name: enable-database-auth-secret
+                  namespace: enable
+                type: Opaque
+                stringData:
+                  connection-string: '${{ secrets.DB_AUTH_CONNECTION_STRING }}'" | kubectl apply -f -
               
             - name: Create/ Update Kubernetes Secret
               run: |
