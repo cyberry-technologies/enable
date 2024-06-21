@@ -21,7 +21,11 @@ jobs:
             - name: Get AKS credentials
               run: az aks get-credentials --resource-group enableAKSResourceGroupEastUS --name enable
 
-            - name: Create Kubernetes Secret
+            - name: Apply Kubernetes namespace manifest
+              run: |
+                kubectl apply -f ./infrastructure/kubernetes/.
+
+            - name: Create Kubernetes Secrets
               run: |
                 kubectl create secret generic enable-database-auth-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_AUTH_CONNECTION_STRING }}
                 kubectl create secret generic enable-database-execution-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_EXECUTION_CONNECTION_STRING }}
@@ -33,7 +37,6 @@ jobs:
 
             - name: Apply Kubernetes manifests
               run: |
-                kubectl apply -f ./infrastructure/kubernetes/.
                 kubectl apply -f ./infrastructure/kubernetes/enable-gateway/.
                 kubectl apply -f ./infrastructure/kubernetes/enable-registry/.
                 kubectl apply -f ./infrastructure/kubernetes/enable-rabbitmq/.
