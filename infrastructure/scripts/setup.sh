@@ -85,7 +85,7 @@ read -r
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Trying to commit and push change to master branch to deploy...${NC}"
 git add .
 git commit -m "Setup AKS cluster"
-git push origin master
+git push origin master 
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Done committing and pushing change to master branch to deploy.${NC}"
 
 
