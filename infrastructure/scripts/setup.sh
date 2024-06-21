@@ -87,6 +87,6 @@ git add .
 git commit -m "Setup AKS cluster"
 git push origin master 
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Done committing and pushing change to master branch to deploy.${NC}"
-
+ 
 
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}DONE... Setup of Azure environment completed successfully${NC}"
