@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: webapprouting.kubernetes.azure.com
   rules:
-  - host: enable.cyberrytechnologies.nl
+  - host: cyberrytechnologies.nl
     http:
       paths:
       - pathType: Prefix
@@ -15,4 +15,4 @@ spec:
           service:
             name: enable-gateway-service
             port:
-              number: 80
+              number: 433
