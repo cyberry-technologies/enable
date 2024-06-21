@@ -1,0 +1,43 @@
+name: main
+
+on:
+    push:
+        branches: [ "main" ]
+    pull_request:
+        branches: [ "main" ]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Login to Azure
+              uses: azure/login@v1
+              with:
+                creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+            - name: Get AKS credentials
+              run: az aks get-credentials --resource-group enableResourceGroupEastUS --name enable
+
+            - name: Create Kubernetes Secret
+              run: |
+                kubectl create secret generic enable-database-auth-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_AUTH_CONNECTION_STRING }}
+                kubectl create secret generic enable-database-execution-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_EXECUTION_CONNECTION_STRING }}
+                kubectl create secret generic enable-database-process-secret --namespace=enable --from-literal=connection-string=${{ secrets.DB_PROCESS_CONNECTION_STRING }}
+                kubectl create secret generic enable-gateway-secret --namespace=enable --from-literal=key-alias=${{ secrets.GATEWAY_KEY_ALIAS }} --from-literal=key-store-password=${{ secrets.GATEWAY_KEY_STORE_PASSWORD }}
+                kubectl create secret generic enable-rabbitmq-secret --namespace=enable --from-literal=username=${{ secrets.RABBITMQ_USERNAME }} --from-literal=password=${{ secrets.RABBITMQ_PASSWORD }}
+                kubectl create secret generic enable-service-api-auth-secret --namespace=enable --from-literal=jwt-key=${{ secrets.SERVICE_AUTH_JWT_KEY }} --from-literal=jwt-issuer=${{ secrets.SERVICE_AUTH_JWT_ISSUER }} --from-literal=jwt-audience=${{ secrets.SERVICE_AUTH_JWT_AUDIENCE }}
+                kubectl create secret generic enable-service-encryption-secret --namespace=enable --from-literal=encryption-key=${{ secrets.SERVICE_ENCRYPTION_KEY }}
+
+            - name: Apply Kubernetes manifests
+              run: |
+                kubectl apply -f ./infrastructure/kubernetes/.
+                kubectl apply -f ./infrastructure/kubernetes/enable-gateway/.
+                kubectl apply -f ./infrastructure/kubernetes/enable-registry/.
+                kubectl apply -f ./infrastructure/kubernetes/enable-rabbitmq/.
+                kubectl apply -f ./infrastructure/kubernetes/enable-service-api-auth/.
+                kubectl apply -f ./infrastructure/kubernetes/enable-service-api-execution/.
+                kubectl apply -f ./infrastructure/kubernetes/enable-service-api-process/.
+                kubectl apply -f ./infrastructure/kubernetes/enable-webapp-management/.
