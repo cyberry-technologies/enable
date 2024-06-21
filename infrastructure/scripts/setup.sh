@@ -31,15 +31,15 @@ echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for su
 
 # #---------- Create resource group ----------
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating resource group...${NC}"
-az group create --name enableResourceGroupEastUS --location eastus
-echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created resource group enableResourceGroupEastUS.${NC}"
+az group create --name enableAKSResourceGroupEastUS --location eastus
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created resource group enableAKSResourceGroupEastUS.${NC}"
 
 
 # #---------- Create RBAC for cluster ----------
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating service principal with Contributor role for AKS cluster...${NC}"
 sp=$(az ad sp create-for-rbac --name enableAKSClusterServicePrincipal --query "{appId:appId, password:password}" -o tsv)
 read -r appId clientSecret <<< "$sp"
-az role assignment create --assignee $appId --role Contributor --scope subscriptions/$subscriptionId/resourceGroups/enableResourceGroupEastUS
+az role assignment create --assignee $appId --role Contributor --scope subscriptions/$subscriptionId/resourceGroups/enableAKSResourceGroupEastUS
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created service principal with Contributor role for AKS cluster.${NC}"
 
 echo "appId=$appId" >> preferences.env
@@ -47,12 +47,12 @@ echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for se
 
 #---------- Create Cluster ----------
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating AKS cluster...${NC}"
-az aks create --resource-group enableResourceGroupEastUS --name enable --service-principal $appId --client-secret $clientSecret --node-count 2 --generate-ssh-keys
+az aks create --resource-group enableAKSResourceGroupEastUS --name enable --service-principal $appId --client-secret $clientSecret --node-count 2 --generate-ssh-keys
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created AKS cluster enable.${NC}"
 
 
 #---------- Set kubectl context ----------
-az aks get-credentials --resource-group enableResourceGroupEastUS --name enable
+az aks get-credentials --resource-group enableAKSResourceGroupEastUS --name enable
 echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Set kubectl context to AKS cluster enable"
 
 
