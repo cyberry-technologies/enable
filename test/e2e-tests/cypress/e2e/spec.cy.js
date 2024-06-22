@@ -44,7 +44,7 @@ const tasks = [
 
 describe('template spec', () => {
   it('passes', () => {
-    cy.visit('http://localhost:8081')
+    cy.visit('http://localhost:80')
 
     // Wait for 1 second
     cy.wait(1000);

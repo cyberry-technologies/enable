@@ -15,4 +15,4 @@ spec:
           service:
             name: enable-gateway-service
             port:
-              number: 433
+              number: 443
