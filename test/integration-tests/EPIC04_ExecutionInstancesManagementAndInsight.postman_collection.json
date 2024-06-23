@@ -49,6 +49,314 @@
 			"response": []
 		},
 		{
+			"name": "executeProcessPublishmentVersion",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"ProcessPublishmentVersion correctly added\", () => {",
+							"    pm.response.to.have.status(204);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/processPublishmentVersion/execute?processPublishmentVersionId={{processPublishmentVersionId}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"processPublishmentVersion",
+						"execute"
+					],
+					"query": [
+						{
+							"key": "processPublishmentVersionId",
+							"value": "{{processPublishmentVersionId}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "executeProcessPublishmentVersion",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"ProcessPublishmentVersion correctly added\", () => {",
+							"    pm.response.to.have.status(204);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/processPublishmentVersion/execute?processPublishmentVersionId={{processPublishmentVersionId}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"processPublishmentVersion",
+						"execute"
+					],
+					"query": [
+						{
+							"key": "processPublishmentVersionId",
+							"value": "{{processPublishmentVersionId}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "executeProcessPublishmentVersion",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"ProcessPublishmentVersion correctly added\", () => {",
+							"    pm.response.to.have.status(204);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/processPublishmentVersion/execute?processPublishmentVersionId={{processPublishmentVersionId}}&userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"processPublishmentVersion",
+						"execute"
+					],
+					"query": [
+						{
+							"key": "processPublishmentVersionId",
+							"value": "{{processPublishmentVersionId}}"
+						},
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getExecutionsOfUser - check",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Empty execution list correctly retrieved\", () => {",
+							"    pm.response.to.have.status(200);",
+							"    ",
+							"    var responseBody = pm.response.json()[2];",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"execution",
+						"get",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getTasksOfExecution - check",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Executions correctly retrieved\", () => {",
+							"    pm.response.to.have.status(200);",
+							"    ",
+							"    var responseBody = pm.response.json();",
+							"",
+							"    pm.expect(responseBody).to.be.an('array').that.has.lengthOf(0);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/task/get/executionId?executionId={{executionId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"task",
+						"get",
+						"executionId"
+					],
+					"query": [
+						{
+							"key": "executionId",
+							"value": "{{executionId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getExecutionsOfUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Empty execution list correctly retrieved\", () => {",
+							"    pm.response.to.have.status(200);",
+							"    // Set execution id in environment variable",
+							"    pm.environment.set('executionId', pm.response.json()[0].id);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId={{userId}}",
+					"host": [
+						"{{apiGatewayBaseUrl}}"
+					],
+					"path": [
+						"execution",
+						"get",
+						"userId"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "login",
 			"event": [
 				{
@@ -225,108 +533,6 @@
 			"response": []
 		},
 		{
-			"name": "executeProcessPublishmentVersion",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"ProcessPublishmentVersion correctly added\", () => {",
-							"    pm.response.to.have.status(204);",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/processPublishmentVersion/execute?processPublishmentVersionId={{processPublishmentVersionId}}&userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"processPublishmentVersion",
-						"execute"
-					],
-					"query": [
-						{
-							"key": "processPublishmentVersionId",
-							"value": "{{processPublishmentVersionId}}"
-						},
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "getExecutionsOfUser",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Empty execution list correctly retrieved\", () => {",
-							"    pm.response.to.have.status(200);",
-							"    // Set execution id in environment variable",
-							"    pm.environment.set('executionId', pm.response.json()[0].id);",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"execution",
-						"get",
-						"userId"
-					],
-					"query": [
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "getExecution",
 			"event": [
 				{
@@ -482,67 +688,6 @@
 			"response": []
 		},
 		{
-			"name": "executeProcessPublishmentVersion",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"ProcessPublishmentVersion correctly added\", () => {",
-							"    pm.response.to.have.status(204);",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/processPublishmentVersion/execute?processPublishmentVersionId={{processPublishmentVersionId}}&userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"processPublishmentVersion",
-						"execute"
-					],
-					"query": [
-						{
-							"key": "processPublishmentVersionId",
-							"value": "{{processPublishmentVersionId}}"
-						},
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "getExecutionsOfUser",
 			"event": [
 				{
@@ -631,67 +776,6 @@
 						{
 							"key": "executionId",
 							"value": "{{executionId}}"
-						},
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "executeProcessPublishmentVersion",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"ProcessPublishmentVersion correctly added\", () => {",
-							"    pm.response.to.have.status(204);",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/processPublishmentVersion/execute?processPublishmentVersionId={{processPublishmentVersionId}}&userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"processPublishmentVersion",
-						"execute"
-					],
-					"query": [
-						{
-							"key": "processPublishmentVersionId",
-							"value": "{{processPublishmentVersionId}}"
 						},
 						{
 							"key": "userId",
@@ -830,90 +914,6 @@
 					"path": [
 						"execution",
 						"delete"
-					],
-					"query": [
-						{
-							"key": "executionId",
-							"value": "{{executionId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "getExecutionsOfUser - check",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Empty execution list correctly retrieved\", () => {",
-							"    pm.response.to.have.status(200);",
-							"    ",
-							"    var responseBody = pm.response.json()[2];",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/execution/get/userId?userId={{userId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"execution",
-						"get",
-						"userId"
-					],
-					"query": [
-						{
-							"key": "userId",
-							"value": "{{userId}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "getTasksOfExecution - check",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Executions correctly retrieved\", () => {",
-							"    pm.response.to.have.status(200);",
-							"    ",
-							"    var responseBody = pm.response.json();",
-							"",
-							"    pm.expect(responseBody).to.be.an('array').that.has.lengthOf(0);",
-							"})"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{apiGatewayBaseUrl}}/task/get/executionId?executionId={{executionId}}",
-					"host": [
-						"{{apiGatewayBaseUrl}}"
-					],
-					"path": [
-						"task",
-						"get",
-						"executionId"
 					],
 					"query": [
 						{

@@ -6,54 +6,54 @@ PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
 #---------- Login to Azure ---------- 
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Logging in to Azure...${NC}"
-# login_output=$(az login)
-# tenantId=$(echo $login_output | jq -r '.[0].tenantId')
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Logged in to Azure...${NC}"
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Logging in to Azure...${NC}"
+login_output=$(az login)
+tenantId=$(echo $login_output | jq -r '.[0].tenantId')
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Logged in to Azure...${NC}"
 
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Your Azure subscriptions: "
-# az account list --output table
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Your Azure subscriptions: "
+az account list --output table
 
-# echo -e "\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Enter your preferred tenantId: "
-# read tenantId
+echo -e "\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Enter your preferred tenantId: "
+read tenantId
 
-# echo "tenantId=$tenantId" > preferences.env
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for tenantId: $tenantId"
+echo "tenantId=$tenantId" > preferences.env
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for tenantId: $tenantId"
 
-# echo -e "\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Enter your preferred subscriptionId: "
-# read subscriptionId
+echo -e "\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Enter your preferred subscriptionId: "
+read subscriptionId
 
-# az account set --subscription $subscriptionId
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Set subscription to $subscriptionId"
+az account set --subscription $subscriptionId
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Set subscription to $subscriptionId"
 
-# echo "subscriptionId=$subscriptionId" >> preferences.env
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for subscriptionId: $subscriptionId"
+echo "subscriptionId=$subscriptionId" >> preferences.env
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for subscriptionId: $subscriptionId"
 
-# # #---------- Create resource group ----------
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating resource group...${NC}"
-# az group create --name enableAKSResourceGroupEastUS --location eastus
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created resource group enableAKSResourceGroupEastUS.${NC}"
-
-
-# # #---------- Create RBAC for cluster ----------
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating service principal with Contributor role for AKS cluster...${NC}"
-# sp=$(az ad sp create-for-rbac --name enableAKSClusterServicePrincipal --query "{appId:appId, password:password}" -o tsv)
-# read -r appId clientSecret <<< "$sp"
-# az role assignment create --assignee $appId --role Contributor --scope subscriptions/$subscriptionId/resourceGroups/enableAKSResourceGroupEastUS
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created service principal with Contributor role for AKS cluster.${NC}"
-
-# echo "appId=$appId" >> preferences.env
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for service principal appId: $appId"
-
-# #---------- Create Cluster ----------
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating AKS cluster...${NC}"
-# az aks create --resource-group enableAKSResourceGroupEastUS --name enable --service-principal $appId --client-secret $clientSecret --node-count 2 --generate-ssh-keys
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created AKS cluster enable.${NC}"
+# #---------- Create resource group ----------
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating resource group...${NC}"
+az group create --name enableAKSResourceGroupEastUS --location eastus
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created resource group enableAKSResourceGroupEastUS.${NC}"
 
 
-# #---------- Set kubectl context ----------
-# az aks get-credentials --resource-group enableAKSResourceGroupEastUS --name enable
-# echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Set kubectl context to AKS cluster enable"
+# #---------- Create RBAC for cluster ----------
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating service principal with Contributor role for AKS cluster...${NC}"
+sp=$(az ad sp create-for-rbac --name enableAKSClusterServicePrincipal --query "{appId:appId, password:password}" -o tsv)
+read -r appId clientSecret <<< "$sp"
+az role assignment create --assignee $appId --role Contributor --scope subscriptions/$subscriptionId/resourceGroups/enableAKSResourceGroupEastUS
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created service principal with Contributor role for AKS cluster.${NC}"
+
+echo "appId=$appId" >> preferences.env
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Stored preference for service principal appId: $appId"
+
+#---------- Create Cluster ----------
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${YELLOW}Creating AKS cluster...${NC}"
+az aks create --resource-group enableAKSResourceGroupEastUS --name enable --service-principal $appId --client-secret $clientSecret --node-count 2 --generate-ssh-keys
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} ${GREEN}Created AKS cluster enable.${NC}"
+
+
+#---------- Set kubectl context ----------
+az aks get-credentials --resource-group enableAKSResourceGroupEastUS --name enable
+echo -e "\n\n${PURPLE}[Cyberry Enable Setup Tool]:${NC} Set kubectl context to AKS cluster enable"
 
 
 #---------- Securely handle preferred secret values ----------
